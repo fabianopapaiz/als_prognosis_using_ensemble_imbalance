@@ -1,4 +1,4 @@
-# als_prognosis_using_ensemble_imbalance
+# Ensemble-Imbalance-based approach to ALS prognosis
 
 
 This code uses convolutional neural networks (with tensorflow) to estimate the parameters of strong gravitational lenses. Unfortunately we're not very good at coding, so you'll find that the code is messy, not well documented, and crazily written. However, that shouldn't discourage you from trying it out. Because it's a pretty pretty cool thing: The code can recover the parameters of gravitational lenses in a fraction of a second. Something that used to take hundreds of hours!
