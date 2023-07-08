@@ -925,3 +925,17 @@ def save_to_csv(df, csv_file, with_index=False):
     #save CSV file
     df.to_csv(csv_file, sep=',', index=with_index)
     print(f'{get_quantity_of_rows(df)} samples were saved')
+
+
+#return the rows with duplicated values in given column
+def get_duplicated_rows(df, column):
+    return df.loc[df[column].duplicated(keep=False) == True]
+
+
+#utilitary method to calculate the number of MONTHS from a given days
+def calculate_months_from_days(days):
+    months_total = np.NaN
+    if (days != None) and (not math.isnan(days)):
+        years, months, days = date_diff_from_days (days)
+        months_total = (years * 12) + months
+    return np.abs(months_total)
