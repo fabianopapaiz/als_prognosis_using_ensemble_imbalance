@@ -945,3 +945,11 @@ def calculate_months_from_days(days):
 def calculate_BMI(weigth_in_kilograms, height_in_meters):
     bmi = weigth_in_kilograms / (height_in_meters * height_in_meters)
     return np.round(bmi, 0)
+
+
+
+def print_columns_array(df):
+    print('[')
+    for c in df.columns:
+        print(f"'{c}',")
+    print(']')
