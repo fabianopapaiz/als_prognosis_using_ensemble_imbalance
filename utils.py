@@ -939,3 +939,9 @@ def calculate_months_from_days(days):
         years, months, days = date_diff_from_days (days)
         months_total = (years * 12) + months
     return np.abs(months_total)
+
+
+# calculate the Body Mass Index (BMI) using the formula:  BMI = weight / (height * height)
+def calculate_BMI(weigth_in_kilograms, height_in_meters):
+    bmi = weigth_in_kilograms / (height_in_meters * height_in_meters)
+    return np.round(bmi, 0)
