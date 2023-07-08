@@ -409,6 +409,10 @@ def plot_histogram_and_boxplot(df=None, column=None, series=None, zero_and_one_a
 
     total_of_rows = series.count()
 
+    if total_of_rows == 0:
+        print('NOTE: There is no data to be plotted! (ZERO rows)')
+        return
+
     series_dtype = series.dtype
 
     if (plot_one_graph_per_row) and (figsize==[15,5]):
