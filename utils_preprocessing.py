@@ -14,6 +14,7 @@ from dateutil import relativedelta
 
 import utils
 
+from sklearn.preprocessing import MinMaxScaler
 
 '''
 Preprocess BMI data
@@ -1278,28 +1279,206 @@ Group deceased patients into Short and Non-Short survival groups:
   - Non-Short >= 25 months     
 '''
 def group_patients_into_short_and_non_short(df):
-    df['Group_Survival'] = np.NaN
-    df['Group_Survival_Coded'] = np.NaN
+
+    df_grouped = df.copy() 
+
+    df_grouped['Survival_Group'] = np.NaN
     
-    to_update = df.loc[
-        (df.Event_Dead==True)
-    &(df.Event_Dead_Time_from_Onset<=24)
+    # mark all patients deceased within 24 months from symptom onset as Short
+    to_update = df_grouped.loc[
+        (df_grouped.Event_Dead==True)
+    &(df_grouped.Event_Dead_Time_from_Onset<=24)
     ].copy()
-    df.loc[to_update.index, 'Group_Survival'] = 'Short'
-    df.loc[to_update.index, 'Group_Survival_Coded'] = 1
+    df_grouped.loc[to_update.index, 'Survival_Group'] = 'Short'
     
-    
-    to_update = df.loc[
-        (df.Event_Dead==True)
-    &(df.Event_Dead_Time_from_Onset>=25)
+    # mark all patients deceased beyond 24 months from symptom onset as Non-Short
+    to_update = df_grouped.loc[
+        (df_grouped.Event_Dead==True)
+    &(df_grouped.Event_Dead_Time_from_Onset>=25)
     ].copy()
-    df.loc[to_update.index, 'Group_Survival'] = 'Non-Short'
-    df.loc[to_update.index, 'Group_Survival_Coded'] = 0
+    df_grouped.loc[to_update.index, 'Survival_Group'] = 'Non-Short'    
     
-    
-    to_update = df.loc[
-        (df.Event_Dead==False)
-    &(df.Event_Dead_Time_from_Onset>=25)
+    # mark all patients not deceased beyond 24 months from symptom onset as Non-Short
+    to_update = df_grouped.loc[
+        (df_grouped.Event_Dead==False)
+    &(df_grouped.Event_Dead_Time_from_Onset>=25)
     ].copy()
-    df.loc[to_update.index, 'Group_Survival'] = 'Non-Short'
-    df.loc[to_update.index, 'Group_Survival_Coded'] = 0   
+    df_grouped.loc[to_update.index, 'Survival_Group'] = 'Non-Short'
+
+    # mark all patients not deceased beyond 24 months from symptom onset as Non-Short
+    to_update = df_grouped.loc[
+        (df_grouped.Event_Dead==False)
+    &(df_grouped.Event_Dead_Time_from_Onset<=24)
+    ].copy()
+    df_grouped.loc[to_update.index, 'Survival_Group'] = 'Censored'
+
+    return df_grouped
+
+
+
+# create dummies vars
+def create_dummies(df, column, drop_first=False, dummy_na=False, prefix=None, prefix_sep='', dtype=float):
+    dummies = pd.get_dummies(df[column],
+                             drop_first=drop_first,
+                             dummy_na=dummy_na,
+                             prefix=prefix,
+                             prefix_sep=prefix_sep,
+                             dtype=dtype)
+    return df.join(dummies)
+
+
+
+def perform_data_codification(df_patients):
+
+    df_coded = df_patients.copy()
+
+    # ===================================================================
+    # codify SEX
+    df_coded.Sex = df_coded.Sex.map( {'Male': 1, 'Female': 0}) 
+    df_coded.rename(columns={'Sex': 'Sex_Male'}, inplace=True) 
+
+    # ===================================================================
+    # codify Site_Onset
+    df_coded.Site_Onset = df_coded.Site_Onset.map( {'Limb/Spinal': 1, 'Bulbar': 0}) 
+
+    # ===================================================================
+    # codify Age_at_Onset
+    df_coded.Age_at_Onset = df_coded.Age_at_Onset.map( {
+        '0-39' : 0, 
+        '40-49': 1, 
+        '50-59': 2, 
+        '60-69': 3, 
+        '70+'  : 4,
+    }) 
+
+    # ===================================================================
+    # codify Riluzole
+    df_coded.Riluzole = df_coded.Riluzole.map( {True: 1, False: 0}) 
+
+    # ===================================================================
+    # codify Diagnosis_Delay
+    df_coded.Diagnosis_Delay = df_coded.Diagnosis_Delay.astype(int)
+
+    to_update = df_coded.loc[(df_coded.Diagnosis_Delay <= 8)]
+    df_coded.loc[to_update.index, 'Diagnosis_Delay'] = 0
+
+    to_update = df_coded.loc[(
+        (df_coded.Diagnosis_Delay > 8)
+        &(df_coded.Diagnosis_Delay <= 18)
+    )]
+    df_coded.loc[to_update.index, 'Diagnosis_Delay'] = 1
+
+    to_update = df_coded.loc[(df_coded.Diagnosis_Delay > 18)]
+    df_coded.loc[to_update.index, 'Diagnosis_Delay'] = 2
+
+    # ===================================================================
+    # codify FVC
+    df_coded.FVC_at_Diagnosis = df_coded.FVC_at_Diagnosis.astype(int)
+    # Abnormal
+    to_update = df_coded.loc[(df_coded.FVC_at_Diagnosis < 80)]
+    df_coded.loc[to_update.index, 'FVC_at_Diagnosis'] = 1
+    # Normal
+    to_update = df_coded.loc[(df_coded.FVC_at_Diagnosis  >= 80)]
+    df_coded.loc[to_update.index, 'FVC_at_Diagnosis'] = 0 
+
+    # ===================================================================
+    # codify BMI_at_Diagnosis
+    # underweight    : < 18.5
+    to_update = df_coded.loc[(df_coded.BMI_at_Diagnosis < 18.5 )]
+    df_coded.loc[to_update.index, 'BMI_at_Diagnosis'] = 0
+
+    # normal weight  : >= 18.5 & < 25.0 
+    to_update = df_coded.loc[(df_coded.BMI_at_Diagnosis >= 18.5) & (df_coded.BMI_at_Diagnosis < 25.0 )]
+    df_coded.loc[to_update.index, 'BMI_at_Diagnosis'] = 1
+
+    # overweight     : >= 25.0 & < 30.0 
+    to_update = df_coded.loc[(df_coded.BMI_at_Diagnosis >= 25.0) & (df_coded.BMI_at_Diagnosis < 30.0 )]
+    df_coded.loc[to_update.index, 'BMI_at_Diagnosis'] = 2
+
+    # grade 1 obesity: >= 30.0 
+    to_update = df_coded.loc[(df_coded.BMI_at_Diagnosis >= 30.0)]
+    df_coded.loc[to_update.index, 'BMI_at_Diagnosis'] = 3
+
+    # convert to int
+    df_coded.BMI_at_Diagnosis = df_coded.BMI_at_Diagnosis.astype(int)
+
+
+    # ===================================================================
+    # codify Survival_Group
+    df_coded.Survival_Group = df_coded.Survival_Group.map( {'Short': 1, 'Non-Short': 0}) 
+
+
+    # ===================================================================
+    # codify ALSFRS Questions slopes
+    cols_slope = [
+        'Q1_Speech_slope_at_Diagnosis',
+        'Q2_Salivation_slope_at_Diagnosis',
+        'Q3_Swallowing_slope_at_Diagnosis',
+        'Q4_Handwriting_slope_at_Diagnosis',
+        'Q5_Cutting_slope_at_Diagnosis',
+        'Q6_Dressing_and_Hygiene_slope_at_Diagnosis',
+        'Q7_Turning_in_Bed_slope_at_Diagnosis',
+        'Q8_Walking_slope_at_Diagnosis',
+        'Q9_Climbing_Stairs_slope_at_Diagnosis',
+        'Q10_Respiratory_slope_at_Diagnosis',
+    ]
+
+    for col_slope in cols_slope:
+
+        slow = df_coded.loc[
+            (df_coded[col_slope]<0.05)
+        ].copy()
+
+        average = df_coded.loc[
+            (df_coded[col_slope]>=0.05)
+            &(df_coded[col_slope]<0.14)
+        ].copy()
+
+        rapid = df_coded.loc[
+            (df_coded[col_slope]>=0.14)
+        ].copy()
+
+        df_coded.loc[slow.index, f'{col_slope}'] = 0 #Slow
+
+        df_coded.loc[average.index, f'{col_slope}'] = 1 #Average
+
+        df_coded.loc[rapid.index, f'{col_slope}'] = 2 #Rapid
+
+        #convert to int
+        df_coded[col_slope] = df_coded[col_slope].astype(int)
+
+
+
+    # ===================================================================
+    # convert columns to integer for these columns below
+    cols_integer = [
+        'Qty_Regions_Involved_at_Diagnosis',	
+        'Region_Involved_Bulbar_at_Diagnosis',	
+        'Region_Involved_Upper_Limb_at_Diagnosis',	
+        'Region_Involved_Lower_Limb_at_Diagnosis',	
+        'Region_Involved_Respiratory_at_Diagnosis',	
+        'Patient_with_Gastrostomy_at_Diagnosis',	
+    ]
+
+    for col in cols_integer:
+        df_coded[col] = df_coded[col].astype(int)
+
+
+
+    #
+    return df_coded
+
+
+
+#
+def perform_data_scaling(df_coded):
+
+    df_scaled = df_coded.copy()
+
+    scaler = MinMaxScaler()
+    for col in df_scaled.columns.values:
+        df_scaled[[col]] = scaler.fit_transform(df_scaled[[col]])
+
+    df_scaled = df_scaled.round(2)   
+
+    return df_scaled 
