@@ -14,9 +14,295 @@ from dateutil import relativedelta
 
 import utils
 
+def generate_time_series_bmi(df_temporal, dir_dest):
+    # Get values by month up to 72 months (i.e., 6 years)
+    n_years = 10
+    threshold = 12 * n_years # "n" years
+    months = np.linspace(0, threshold, threshold+1, dtype=float) #[1.0, 2.0, 3.0,..., 72.0]
+
+
+    baselines = ['Symptoms_Onset']
+
+    for baseline in baselines:
+
+        col_baseline = f'Delta_from_{baseline}'
+        
+        # copy data ordering by col_baseline
+        df_copy = df_temporal.sort_values(by=['subject_id', col_baseline]).copy()
+        
+        # drop rows with NaN in col_baseline
+        df_copy.dropna(
+            subset=[
+                col_baseline, 
+                'BMI', 
+            ], 
+            inplace=True
+        )
+
+        # filter rows by threshold
+        df_pivot = df_copy.copy()
+
+        # get only the names of the Values columns 
+        cols_to_pivot = df_pivot.columns[2:]
+
+        # create pivot by column Result
+        df_aux = df_pivot.pivot_table(
+            index='subject_id', 
+            columns=col_baseline, 
+            values='BMI',
+            aggfunc=np.max, # get max value in that month (can exist 2+ measurements for a same month)
+        )
+        
+        # reset index
+        df_aux.reset_index(inplace=True)
+
+        # get the month-columns existing in the pivot-table
+        cols_months = df_aux.columns[1:]
+
+        # check if all months columns were created [1-72]
+        for month in months:
+            # if month not present in the columns
+            if month not in cols_months:
+                # Creating column for this month and set its values to NaN
+                # PS: "int(month)" is used to keep columns ordered by month number
+                df_aux.insert(int(month), month, np.NaN)
+
+        # code to ensure the order of the columns
+        cols_months_ordered = list(sorted(months))
+        cols_months_ordered.insert(0, 'subject_id')
+        df_aux = df_aux[cols_months_ordered]
+                
+        # set month-0 = NaN 
+        df_aux[0.0] = np.NaN
+ 
+        # read file saved to fill NaN values using interpolation
+        df_fill_nan_using_interpolation = df_aux
+        # get columns ignoring 'subject_id'
+        cols_months = df_fill_nan_using_interpolation.columns[1:]
+
+        # print (cols_months)
+        df_aux = df_fill_nan_using_interpolation[cols_months].interpolate(
+            method='linear', 
+            limit_direction='both',
+            limit=1000, 
+            axis=1, 
+            inplace=False,
+        ).copy()
+
+        # round Values using 0 decimal places
+        df_aux[cols_months] = np.round(df_aux[cols_months], 0)
+
+        # get subject_id column
+        df_fill_nan_using_interpolation[cols_months] = df_aux[cols_months]
+
+        # drop rows with NaN values (where there is no Value registered)
+        df_fill_nan_using_interpolation.dropna(inplace=True)
+
+        # save data again for each Value column with interpolation
+        print(f'BMI')
+        csv_file = f'{dir_dest}/TimeSeries/BMI_TimeSeries.csv'
+        utils.save_to_csv(df=df_fill_nan_using_interpolation, csv_file=csv_file)
+
+        # just for further tests
+        df_aux = df_fill_nan_using_interpolation.copy()
+        
+        print()
+
+
+
+
+
+def generate_time_series_svc(df_temporal, dir_dest):
+    # Get values by month up to 72 months (i.e., 6 years)
+    n_years = 10
+    threshold = 12 * n_years # "n" years
+    months = np.linspace(0, threshold, threshold+1, dtype=float) #[1.0, 2.0, 3.0,..., 72.0]
+
+
+    baselines = ['Symptoms_Onset']
+
+    for baseline in baselines:
+
+        col_baseline = f'Delta_from_{baseline}'
+        
+        # copy data ordering by col_baseline
+        df_copy = df_temporal.sort_values(by=['subject_id', col_baseline]).copy()
+        
+        # drop rows with NaN in col_baseline
+        df_copy.dropna(
+            subset=[
+                col_baseline, 
+                'SVC_Perc_of_Normal', 
+            ], 
+            inplace=True
+        )
+
+        # filter rows by threshold
+        df_pivot = df_copy.copy()
+
+        # get only the names of the Values columns 
+        cols_to_pivot = df_pivot.columns[2:]
+
+        # create pivot by column Result
+        df_aux = df_pivot.pivot_table(
+            index='subject_id', 
+            columns=col_baseline, 
+            values='SVC_Perc_of_Normal',
+            aggfunc=np.max, # get max value in that month (can exist 2+ measurements for a same month)
+        )
+        
+        # reset index
+        df_aux.reset_index(inplace=True)
+
+        # get the month-columns existing in the pivot-table
+        cols_months = df_aux.columns[1:]
+
+        # check if all months columns were created [1-72]
+        for month in months:
+            # if month not present in the columns
+            if month not in cols_months:
+                # Creating column for this month and set its values to NaN
+                # PS: "int(month)" is used to keep columns ordered by month number
+                df_aux.insert(int(month), month, np.NaN)
+
+        # code to ensure the order of the columns
+        cols_months_ordered = list(sorted(months))
+        cols_months_ordered.insert(0, 'subject_id')
+        df_aux = df_aux[cols_months_ordered]
+                
+        # set month-0 = NaN 
+        df_aux[0.0] = np.NaN
+ 
+        # read file saved to fill NaN values using interpolation
+        df_fill_nan_using_interpolation = df_aux
+        # get columns ignoring 'subject_id'
+        cols_months = df_fill_nan_using_interpolation.columns[1:]
+
+        # print (cols_months)
+        df_aux = df_fill_nan_using_interpolation[cols_months].interpolate(
+            method='linear', 
+            limit_direction='both',
+            limit=1000, 
+            axis=1, 
+            inplace=False,
+        ).copy()
+
+        # round Values using 0 decimal places
+        df_aux[cols_months] = np.round(df_aux[cols_months], 0)
+
+        # get subject_id column
+        df_fill_nan_using_interpolation[cols_months] = df_aux[cols_months]
+
+        # drop rows with NaN values (where there is no Value registered)
+        df_fill_nan_using_interpolation.dropna(inplace=True)
+
+        # save data again for each Value column with interpolation
+        print(f'SVC')
+        csv_file = f'{dir_dest}/TimeSeries/SVC_TimeSeries.csv'
+        utils.save_to_csv(df=df_fill_nan_using_interpolation, csv_file=csv_file)
+
+        # just for further tests
+        df_aux = df_fill_nan_using_interpolation.copy()
+        
+        print()
+
+
 
 def generate_time_series_fvc(df_temporal, dir_dest):
-    pass
+    # Get values by month up to 72 months (i.e., 6 years)
+    n_years = 10
+    threshold = 12 * n_years # "n" years
+    months = np.linspace(0, threshold, threshold+1, dtype=float) #[1.0, 2.0, 3.0,..., 72.0]
+
+
+    baselines = ['Symptoms_Onset']
+
+    for baseline in baselines:
+
+        col_baseline = f'Delta_from_{baseline}'
+        
+        # copy data ordering by col_baseline
+        df_copy = df_temporal.sort_values(by=['subject_id', col_baseline]).copy()
+        
+        # drop rows with NaN in col_baseline
+        df_copy.dropna(
+            subset=[
+                col_baseline, 
+                'FVC_Perc_of_Normal', 
+            ], 
+            inplace=True
+        )
+
+        # filter rows by threshold
+        df_pivot = df_copy.copy()
+
+        # get only the names of the Values columns 
+        cols_to_pivot = df_pivot.columns[2:]
+
+        # create pivot by column Result
+        df_aux = df_pivot.pivot_table(
+            index='subject_id', 
+            columns=col_baseline, 
+            values='FVC_Perc_of_Normal',
+            aggfunc=np.max, # get max value in that month (can exist 2+ measurements for a same month)
+        )
+        
+        # reset index
+        df_aux.reset_index(inplace=True)
+
+        # get the month-columns existing in the pivot-table
+        cols_months = df_aux.columns[1:]
+
+        # check if all months columns were created [1-72]
+        for month in months:
+            # if month not present in the columns
+            if month not in cols_months:
+                # Creating column for this month and set its values to NaN
+                # PS: "int(month)" is used to keep columns ordered by month number
+                df_aux.insert(int(month), month, np.NaN)
+
+        # code to ensure the order of the columns
+        cols_months_ordered = list(sorted(months))
+        cols_months_ordered.insert(0, 'subject_id')
+        df_aux = df_aux[cols_months_ordered]
+                
+        # set month-0 = NaN 
+        df_aux[0.0] = np.NaN
+ 
+        # read file saved to fill NaN values using interpolation
+        df_fill_nan_using_interpolation = df_aux
+        # get columns ignoring 'subject_id'
+        cols_months = df_fill_nan_using_interpolation.columns[1:]
+
+        # print (cols_months)
+        df_aux = df_fill_nan_using_interpolation[cols_months].interpolate(
+            method='linear', 
+            limit_direction='both',
+            limit=1000, 
+            axis=1, 
+            inplace=False,
+        ).copy()
+
+        # round Values using 0 decimal places
+        df_aux[cols_months] = np.round(df_aux[cols_months], 0)
+
+        # get subject_id column
+        df_fill_nan_using_interpolation[cols_months] = df_aux[cols_months]
+
+        # drop rows with NaN values (where there is no Value registered)
+        df_fill_nan_using_interpolation.dropna(inplace=True)
+
+        # save data again for each Value column with interpolation
+        print(f'FVC')
+        csv_file = f'{dir_dest}/TimeSeries/FVC_TimeSeries.csv'
+        utils.save_to_csv(df=df_fill_nan_using_interpolation, csv_file=csv_file)
+
+        # just for further tests
+        df_aux = df_fill_nan_using_interpolation.copy()
+        
+        print()
+
+
 
 
 def generate_time_series_alsfrs(df_temporal, dir_dest):
