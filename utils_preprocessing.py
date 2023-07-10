@@ -16,6 +16,156 @@ import utils
 
 
 '''
+Preprocess BMI data
+'''
+def preprocess_bmi(df_to_process, data_dir):
+    df = df_to_process.copy()
+
+    # delete column Height_in_Meters if exists  
+    if 'Height_in_Meters' in df.columns:
+        df.drop(columns='Height_in_Meters', inplace=True)
+
+    # Read data from raw FVC CSV file
+    data_file = f'{data_dir}/PROACT_VITALSIGNS.csv'
+    df_raw = pd.read_csv(data_file, delimiter=',')
+
+
+    # Convert Weigth to KG for those with units in Pounds
+    # get rows with the column Height not NaN
+    df_weigth = df_raw.loc[(df_raw['Weight_Units']=='Pounds')].copy()
+    df_weigth['Weight_in_kg'] = np.round((df_weigth['Weight'] * 0.453592), 1) # constant to convert
+    df_raw.loc[(df_weigth.index), 'Weight'] = df_weigth['Weight_in_kg']
+
+
+    # Get info about subject's Height and update on Static CSV file
+    # Note: some heigths were measured in Inches and will be converted to Centimeters.
+    
+    # 1) Create Height_in_Centimeters column, converting those heights in INCHES to centimeters
+
+    # get rows with the column Height not NaN
+    df_heights = df_raw.loc[(df_raw['Height'].isnull()==False), ['subject_id', 'Height', 'Height_Units']].copy()
+
+    # convert Inches to Centimeters
+    df_inches = df_heights[(df_heights['Height_Units']=='Inches')].copy()
+    df_inches['Height_in_Centimeters'] = np.round((df_inches['Height'] * 2.54), 1) # constant to convert
+    df_heights.loc[(df_inches.index), 'Height_in_Centimeters'] = np.round(df_inches['Height_in_Centimeters'],0)
+
+    # create a column to represent the final Height to be used (in Meters and Centimeters)
+    df_heights['Height_in_Centimeters'] = np.round(df_heights['Height'], 0)
+    df_heights['Height_in_Meters'] = np.round( (df_heights['Height'] / 100), 2)
+
+    # group by subject_ID and keep the first non-NaN value for each column (using the first() method)
+    df_heights = df_heights.groupby(['subject_id']).first().reset_index()
+
+    #delete rows that have height <= 0.80 centimeters (possible measurement errors) (n=175)
+    to_delete = df_heights.loc[(df_heights.Height_in_Meters) <= 0.80].copy()
+    print(f'{utils.get_quantity_of_rows(to_delete)} samples will be deleted due to Height < 0.80')
+    df_heights.drop(index=to_delete.index, inplace=True)
+
+    # delete unnecessary columns
+    df_heights.drop(
+        columns=[
+            'Height', 
+            'Height_Units',
+            'Height_in_Centimeters'
+        ], 
+        inplace=True
+    )
+
+    # 2) Add subjects' Heights in the Static data file, according to those obtained from
+    # Vital Signs data file
+    # create the height column on STATIC data, with default value = NaN
+    df = utils.join_datasets_by_key(df_main=df, df_to_join=df_heights, key_name='subject_id', how='left')
+
+
+    # Get longitudinal information about the subjects' weigth, aiming calculate the
+    # Weight data file containing weigths history, Delta's, and BMI (Body Mass Index)
+
+    # 1) Create Weigth_in_Kilograms column, converting those weigths in POUNDS to kilograms
+    # get rows with the column Weigth not NaN
+    df_weigths = df_raw.loc[(df_raw['Weight'].isnull()==False), ['subject_id', 'Vital_Signs_Delta',
+                                                                'Weight', 'Weight_Units']].copy()
+
+    # rename Vital_Signs_Delta column to Delta
+    df_weigths.rename(columns={'Vital_Signs_Delta': 'Delta'}, inplace=True)
+
+    # create a column to represent the final Height to be used
+    df_weigths['Weigth_in_Kilograms'] = df_weigths['Weight']
+
+    # convert Inches to Centimeters
+    df_pounds = df_weigths[(df_weigths['Weight_Units']=='Pounds')].copy()
+    df_pounds['Weigth_in_Kilograms'] = np.round((df_pounds['Weight'] / 2.2046), 1) # constant to convert
+
+    # update dataset with weigths
+    df_weigths.loc[(df_pounds.index), 'Weigth_in_Kilograms'] = df_pounds['Weigth_in_Kilograms']
+
+    # delete rows that have weigth <= 25 kg (possible measurement errors) (n=165)
+    to_delete = df_weigths.loc[(df_weigths.Weigth_in_Kilograms) < 25].copy()
+    print(f'{utils.get_quantity_of_rows(to_delete)} samples will be deleted due to Weigth < 25 kg')
+    df_weigths.drop(index=to_delete.index, inplace=True)
+
+    # delete unnecessary columns
+    df_weigths.drop(columns=['Weight', 'Weight_Units'], inplace=True)
+
+
+    # Join the 2 datasets to calcute ALSFRS Delta from Symptoms_Onset
+    # get only columns subject_id and Symptoms_Onset_Delta
+    df_patients = df[[
+        'subject_id', 
+        'Symptoms_Onset_Delta',
+        'Height_in_Meters',
+    ]].copy()
+    df_temp = utils.join_datasets_by_key(df_main=df_weigths, df_to_join=df_patients, key_name='subject_id')
+
+
+    # Create Delta_from_Symptoms columns (in  days and  months )
+    #calculate in DAYS
+    df_temp['Delta_from_Symptoms_Onset_in_Days'] = df_temp.Delta + np.abs(df_temp.Symptoms_Onset_Delta)
+    #calculate in MONTHS
+    df_temp['Delta_from_Symptoms_Onset'] = np.NaN
+    in_months = df_temp['Delta_from_Symptoms_Onset_in_Days'].apply( lambda x: utils.calculate_months_from_days(x)) 
+    df_temp.loc[df_temp.index,'Delta_from_Symptoms_Onset'] = in_months
+
+    # Drop rows with NaN in Delta_from_Symptoms_Onset column
+    df_temp.dropna(subset=['Delta_from_Symptoms_Onset'], inplace=True)
+    df_temp.dropna(subset=['Height_in_Meters'], inplace=True)
+
+    # Delete some unnecessary columns
+    cols_to_remove = [
+        'Delta', 
+        'Symptoms_Onset_Delta', 
+    ]
+    df_temp.drop(columns=cols_to_remove, inplace=True)
+
+
+    # Calculate the subjects' BMI (Body Mass Index)
+    # Formula: BMI = Weigth (kg) / Height2 (m)
+    # get ONLY rows with information about WEIGHT and HEIGTH
+    df_bmi = df_temp.loc[(df_temp['Weigth_in_Kilograms'].isnull()==False) & (df_temp['Height_in_Meters'].isnull()==False)].copy()
+
+    # calculate the BMI for each row
+    df_bmi['BMI'] = df_bmi.apply( lambda x: utils.calculate_BMI(x['Weigth_in_Kilograms'], x['Height_in_Meters']), 
+                                axis=1) 
+
+    # create columns in the main data-frame to store the calculated values
+    df_temp['BMI'] = np.NaN
+
+    # store the calculated values in the main data-frame
+    df_temp.loc[(df_bmi.index), 'BMI'] = df_bmi['BMI']
+
+
+    # Solve the problem were rows have duplicated Delta_from_Symptoms_Onset
+    #sort rows by 'subject_id', 'Delta_from_Symptoms_Onset', and 'Slope'
+    df_remove_duplicated = df_temp.sort_values(['subject_id', 'Delta_from_Symptoms_Onset', 'Weigth_in_Kilograms'])
+    #get only the last row for each 'subject_id' and'Delta_from_Symptoms_Onset'
+    df_remove_duplicated = df_remove_duplicated.groupby(['subject_id', 'Delta_from_Symptoms_Onset']).last().reset_index()
+    df_raw = df_remove_duplicated.copy()
+
+    #
+    return df, df_raw
+
+
+'''
 Preprocess SVC data
 '''
 def preprocess_svc(df_to_process, data_dir):
