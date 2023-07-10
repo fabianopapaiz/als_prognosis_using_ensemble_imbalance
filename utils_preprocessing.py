@@ -15,6 +15,267 @@ from dateutil import relativedelta
 import utils
 
 
+'''
+Preprocess SVC data
+'''
+def preprocess_svc(df_to_process, data_dir):
+    df = df_to_process.copy()
+
+    # Read data from raw FVC CSV file
+    data_file = f'{data_dir}/PROACT_SVC.csv'
+    df_raw = pd.read_csv(data_file, delimiter=',')
+
+    # Check if exist rows with NaN on Slow_vital_Capacity_Delta column
+    # and, if so, DELETE them
+    to_delete = df_raw.loc[(df_raw.Slow_vital_Capacity_Delta.isnull())]
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+
+
+    # The value for SVC is present in 3 columns (Subject_Liters_Trial_1, Trial_2,
+    # and Trial_3).
+    # A new column will be created and set to the max value present in these 3 columns.
+    cols = ['Subject_Liters_Trial_1', 'Subject_Liters__Trial_2_', 'Subject_Liters__Trial_3_']
+
+    # create a new DF with these columns values
+    df_max_svc = df_raw[cols].copy()
+
+    # replace all NaN values to -1
+    df_max_svc.fillna(-1.0, inplace=True)
+
+    # get the max value present in columns Subject_Liters_Trial_1, Subject_Liters_Trial_2, and Subject_Liters_Trial_3
+    df_max_svc['max'] = df_max_svc[cols].values.max(axis=1)
+
+    #replace -1 values with NaN
+    df_max_svc['max'].replace(-1.0, np.NaN, inplace=True)
+
+    # create the column SVC in df_raw and set to max value calculated
+    df_raw['SVC'] = df_max_svc['max']
+
+
+    # A new column will be created to represent the percentage of normal, following the same logic of the previous step
+    # The value is present in 3 columns (pct_of_Normal_Trial_1, Trial_2,
+    # and Trial_3).
+    cols = ['pct_of_Normal_Trial_1', 'pct_of_Normal_Trial_2', 'pct_of_Normal_Trial_3']
+
+    # create a new DF with these columns values
+    df_max_svc = df_raw[cols].copy()
+
+    # replace all NaN values to -1
+    df_max_svc.fillna(-1.0, inplace=True)
+
+    # get the max value present in columns 
+    df_max_svc['max'] = df_max_svc[cols].values.max(axis=1)
+
+    #replace -1 values with NaN
+    df_max_svc['max'].replace(-1.0, np.NaN, inplace=True)
+
+    df_max_svc
+
+    # create the column FVC in df_raw and set to max value calculated
+    df_raw['SVC_Perc_of_Normal'] = df_max_svc['max']
+
+
+    # Check if exist rows with NaN on SVC column and, if so, DELETE them
+    to_delete = df_raw.loc[(df_raw.SVC.isnull() == True)]
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete,verbose=False)
+    
+    # Join the 2 datasets to calcute ALSFRS Delta from Symptoms_Onset
+    # get only columns subject_id and Symptoms_Onset_Delta
+    df_patients = df[[
+        'subject_id', 
+        'Symptoms_Onset_Delta'
+    ]].copy()
+    df_raw = utils.join_datasets_by_key(df_main=df_raw, df_to_join=df_patients, key_name='subject_id')
+
+
+    # Create Delta_from_Symptoms columns (in  days and  months)
+    #calculate in DAYS
+    df_raw['Delta_from_Symptoms_Onset_in_Days'] = df_raw.Slow_vital_Capacity_Delta + np.abs(df_raw.Symptoms_Onset_Delta)
+    #calculate in MONTHS
+    df_raw['Delta_from_Symptoms_Onset'] = np.NaN
+    in_months = df_raw['Delta_from_Symptoms_Onset_in_Days'].apply( lambda x: utils.calculate_months_from_days(x)) 
+    df_raw.loc[df_raw.index,'Delta_from_Symptoms_Onset'] = in_months
+
+
+    # Calculate percentage of normal for those with SVC_Perc_of_Normal = NaN,
+    # subject_normal <> NaN and SVC <> NaN
+    to_calculate = df_raw.loc[
+         (df_raw.SVC_Perc_of_Normal.isnull())
+        &(df_raw.Subject_Normal.isnull() == False)
+        &(df_raw.SVC.isnull() == False)
+    ].copy()
+    df_raw.loc[to_calculate.index, 'SVC_Perc_of_Normal'] = np.round(df_raw['SVC']/df_raw['Subject_Normal']*100, 0)
+
+
+    # Delete some unnecessary columns
+    cols_to_remove = ['Slow_vital_Capacity_Delta', 
+                    'Subject_Liters_Trial_1', 
+                    'pct_of_Normal_Trial_1', 
+                    'Subject_Liters__Trial_2_', 
+                    'pct_of_Normal_Trial_2', 
+                    'Subject_Liters__Trial_3_', 
+                    'pct_of_Normal_Trial_3',
+                    'Slow_Vital_Capacity_Units',
+                    'Symptoms_Onset_Delta', 
+                    'Subject_Normal',
+                    ]
+    df_raw.drop(columns=cols_to_remove, inplace=True)
+
+
+    # Drop rows with NaN values in Delta_from_Symptoms_Onset and SVC_Perc_of_Normal
+    df_raw.dropna(subset=['Delta_from_Symptoms_Onset'], inplace=True)
+    df_raw.dropna(subset=['SVC_Perc_of_Normal'], inplace=True)
+
+
+    # Solve the problem were rows have duplicated Delta_from_Symptoms_Onset
+    # sort rows by 'subject_id', 'Delta_from_Symptoms_Onset', and 'Slope'
+    df_remove_duplicated = df_raw.sort_values(['subject_id', 
+                                        'Delta_from_Symptoms_Onset_in_Days', 
+                                        'SVC'])   
+    # get only the last row for each 'subject_id' and'Delta_from_Symptoms_Onset'
+    df_remove_duplicated = df_remove_duplicated.groupby(['subject_id', 
+                                                        'Delta_from_Symptoms_Onset'
+                                                        ]).last().reset_index()
+
+    df_raw = df_remove_duplicated.copy()
+    
+
+    #
+    return df_raw
+
+
+'''
+Preprocess FVC data
+'''
+def preprocess_fvc(df_to_process, data_dir):
+    df = df_to_process.copy()
+
+    # Read data from raw FVC CSV file
+    data_file = f'{data_dir}/PROACT_FVC.csv'
+    df_raw = pd.read_csv(data_file, delimiter=',')
+
+    # Check if exist rows with NaN on Forced_Vital_Capacity_Delta column
+    # and, if so, DELETE them
+    to_delete = df_raw.loc[(df_raw.Forced_Vital_Capacity_Delta.isnull())]
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+    
+
+    # The value for FVC is present in 3 columns (Subject_Liters_Trial_1, Trial_2, and Trial_3).
+    # A new column will be created and set to the max value present in these 3 columns.
+    # Another column will be created to represent the percentage of normal, following the same logic
+    cols = ['Subject_Liters_Trial_1', 'Subject_Liters_Trial_2', 'Subject_Liters_Trial_3']
+
+    # create a new DF with these columns values
+    df_max_fvc = df_raw[cols].copy()
+
+    # replace all NaN values to -1
+    df_max_fvc.fillna(-1.0, inplace=True)
+
+    # get the max value present in columns Subject_Liters_Trial_1, Subject_Liters_Trial_2, and Subject_Liters_Trial_3
+    df_max_fvc['max'] = df_max_fvc[cols].values.max(axis=1)
+
+    #replace -1 values with NaN
+    df_max_fvc['max'].replace(-1.0, np.NaN, inplace=True)
+
+    # create the column FVC in df_raw and set to max value calculated
+    df_raw['FVC'] = df_max_fvc['max']
+
+
+
+    # Another column will be created to represent the percentage of normal, following the same logic of the previous step
+    # The value is present in 3 columns (pct_of_Normal_Trial_1, Trial_2, and Trial_3).
+    cols = ['pct_of_Normal_Trial_1', 'pct_of_Normal_Trial_2', 'pct_of_Normal_Trial_3']
+
+    # create a new DF with these columns values
+    df_max_fvc = df_raw[cols].copy()
+
+    # replace all NaN values to -1
+    df_max_fvc.fillna(-1.0, inplace=True)
+
+    # get the max value present in columns 
+    df_max_fvc['max'] = df_max_fvc[cols].values.max(axis=1)
+
+    #replace -1 values with NaN
+    df_max_fvc['max'].replace(-1.0, np.NaN, inplace=True)
+
+    df_max_fvc
+
+    # create the column FVC in df_raw and set to max value calculated
+    df_raw['FVC_Perc_of_Normal'] = df_max_fvc['max']
+
+
+    # Check if exist rows with NaN on FVC column and, if so, DELETE them
+    to_delete = df_raw.loc[(df_raw.FVC.isnull() == True)]
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+
+
+    # Join the 2 datasets to calcute ALSFRS Delta from Symptoms_Onset
+    # get only columns subject_id and Symptoms_Onset_Delta
+    df_patients = df[[
+        'subject_id', 
+        'Symptoms_Onset_Delta'
+    ]].copy()
+    df_raw = utils.join_datasets_by_key(df_main=df_raw, df_to_join=df_patients, key_name='subject_id')
+
+
+    # Create Delta_from_Symptoms columns (in  days and  months)
+    #calculate in DAYS
+    df_raw['Delta_from_Symptoms_Onset_in_Days'] = df_raw.Forced_Vital_Capacity_Delta + np.abs(df_raw.Symptoms_Onset_Delta)
+    #calculate in MONTHS
+    df_raw['Delta_from_Symptoms_Onset'] = np.NaN
+    in_months = df_raw['Delta_from_Symptoms_Onset_in_Days'].apply( lambda x: utils.calculate_months_from_days(x)) 
+    df_raw.loc[df_raw.index,'Delta_from_Symptoms_Onset'] = in_months
+    
+    
+    # Calculate percentage of normal for those with FVC_Perc_of_Normal = NaN,
+    # subject_normal <> NaN and FVC <> NaN
+    to_calculate = df_raw.loc[
+         (df_raw.FVC_Perc_of_Normal.isnull())
+        &(df_raw.subject_normal.isnull() == False)
+        &(df_raw.FVC.isnull() == False)
+    ].copy()
+    df_raw.loc[to_calculate.index, 'FVC_Perc_of_Normal'] = np.round(df_raw['FVC']/df_raw['subject_normal']*100, 0)
+    
+
+    # Delete some unnecessary columns
+    cols_to_remove = ['Forced_Vital_Capacity_Delta', 
+                    'Subject_Liters_Trial_1', 
+                    'pct_of_Normal_Trial_1', 
+                    'Subject_Liters_Trial_2', 
+                    'pct_of_Normal_Trial_2', 
+                    'Subject_Liters_Trial_3', 
+                    'pct_of_Normal_Trial_3',
+                    'Forced_Vital_Capacity_Units',
+                    'Symptoms_Onset_Delta', 
+                    'subject_normal',
+                    ]
+
+    df_raw.drop(
+        columns=cols_to_remove, 
+        inplace=True
+    )
+
+
+    # Drop rows with NaN values in the columns Delta_from_Symptoms_Onset and FVC_Perc_of_Normal
+    df_raw.dropna(subset=['Delta_from_Symptoms_Onset'], inplace=True)
+    df_raw.dropna(subset=['FVC_Perc_of_Normal'], inplace=True)    
+
+
+    # Solve the problem were rows have duplicated Delta_from_Symptoms_Onset
+    # sort rows by 'subject_id', 'Delta_from_Symptoms_Onset', and 'Slope'
+    df_remove_duplicated = df_raw.sort_values(['subject_id', 
+                                        'Delta_from_Symptoms_Onset_in_Days', 
+                                        'FVC'])
+
+    # get only the last row for each 'subject_id' and'Delta_from_Symptoms_Onset'
+    df_remove_duplicated = df_remove_duplicated.groupby(['subject_id', 
+                                                        'Delta_from_Symptoms_Onset'
+                                                        ]).last().reset_index()
+
+    df_raw = df_remove_duplicated.copy()
+
+    #
+    return df_raw
 
 '''
 Preprocess ALSFRS data
