@@ -983,42 +983,31 @@ def preprocess_diagnosis_delay(df_to_process):
     diagnosis_delay_in_months = df['Diagnosis_Delay_in_Days'].apply( lambda x: utils.calculate_months_from_days(x)) 
     df.loc[df.index,'Diagnosis_Delay'] = diagnosis_delay_in_months
 
-
-    # Codify Diagnosis_Delay
-    # - Long    : >  18 months     
-    # - Average  : >   8 and <= 18 months  
-    # - Short     : <=  8 months   
-    to_update = df.loc[(df.Diagnosis_Delay > 18)]
-    df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Long'
+    # # Codify Diagnosis_Delay
+    # # - Long    : >  18 months     
+    # # - Average  : >   8 and <= 18 months  
+    # # - Short     : <=  8 months   
+    # to_update = df.loc[(df.Diagnosis_Delay > 18)]
+    # df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Long'
     
-    to_update = df.loc[(
-        (df.Diagnosis_Delay > 8)
-        &(df.Diagnosis_Delay <= 18)
-    )]
-    df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Average'
+    # to_update = df.loc[(
+    #     (df.Diagnosis_Delay > 8)
+    #     &(df.Diagnosis_Delay <= 18)
+    # )]
+    # df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Average'
     
-    to_update = df.loc[(df.Diagnosis_Delay <= 8)]
-    df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Short'
+    # to_update = df.loc[(df.Diagnosis_Delay <= 8)]
+    # df.loc[to_update.index, 'Diagnosis_Delay_Coded'] = 'Short'
 
 
     # Drop irrelevant columns   
     irrelevant_cols = [
         'Diagnosis_Delay_in_Days', 
-        'Diagnosis_Delay', 
     ]
 
     df.drop(
         columns=irrelevant_cols, 
         inplace=True,
-    )
-
-
-    # rename columns
-    df.rename(
-        columns={
-            'Diagnosis_Delay_Coded': 'Diagnosis_Delay', 
-        }, 
-        inplace=True
     )
 
     return df
