@@ -14,6 +14,241 @@ from dateutil import relativedelta
 
 import utils
 
+def generate_biomarkers_at_diagnosis_alsfrs(df_patients, dir_time_series_alsfrs):
+    
+    # 1) read data for each ALSFRS QUESTION (e.g., SLOPES)
+    dfs_ts_ALSFRS_q_slopes = []
+
+    alsfrs_question_columns = [
+        'Q1_Speech',
+        'Q2_Salivation',
+        'Q3_Swallowing',
+        'Q4_Handwriting',
+        'Q5_Cutting',
+        'Q6_Dressing_and_Hygiene',
+        'Q7_Turning_in_Bed',
+        'Q8_Walking',
+        'Q9_Climbing_Stairs',
+        'Q10_Respiratory',
+    ]
+
+    for q_col in alsfrs_question_columns:
+        # read SLOPES for each question
+        data_file = f'{dir_time_series_alsfrs}/ALSFRS_TimeSeries_Slope_{q_col}.csv'
+        df_aux = pd.read_csv(data_file, delimiter=',')
+        dfs_ts_ALSFRS_q_slopes.append([df_aux, f'{q_col}_slope'])
+
+
+    # 2) Read ALSFRS Regions-Involved Time-Series data
+    dfs_ts_qty_regions_involved = []
+
+    data_file = f'{dir_time_series_alsfrs}/ALSFRS_TimeSeries_Qty_Regions_Involved.csv'
+    df_aux = pd.read_csv(data_file, delimiter=',')
+    dfs_ts_qty_regions_involved.append([df_aux, 'Qty_Regions_Involved'])
+
+    # For each REGION, read QUANTITY OF REGIONS INVOLVED
+    dfs_ts_regions_involved = []
+
+    alsfrs_regions_involved = [
+        'Region_Involved_Bulbar',
+        'Region_Involved_Upper_Limb',
+        'Region_Involved_Lower_Limb',
+        'Region_Involved_Respiratory',
+    ]
+
+    for reg_inv_col in alsfrs_regions_involved:
+        # read SLOPES for each question
+        data_file = f'{dir_time_series_alsfrs}/ALSFRS_TimeSeries_{reg_inv_col}.csv'
+        df_aux = pd.read_csv(data_file, delimiter=',')
+        dfs_ts_regions_involved.append([df_aux, f'{reg_inv_col}'])
+
+
+
+    # 3) Read ALSFRS Patient-With-Gastrostomy Time-Series data
+    dfs_ts_patient_with_gastrostomy = []
+    data_file = f'{dir_time_series_alsfrs}/ALSFRS_TimeSeries_Patient_with_Gastrostomy.csv'
+    df_aux = pd.read_csv(data_file, delimiter=',')
+    dfs_ts_patient_with_gastrostomy.append([df_aux, 'Patient_with_Gastrostomy'])                                        
+
+
+
+    # 4) Get time-series values at diagnosis
+    dfs_ts = []
+    # add ALSFRS QUESTIONS slopes data_frames
+    for df in dfs_ts_ALSFRS_q_slopes:
+        dfs_ts.append(df)
+
+    # add ALSFRS QUANTITY OF REGIONS INVOLVED data_frames
+    for df in dfs_ts_qty_regions_involved:
+        dfs_ts.append(df)
+        
+    # add ALSFRS QUANTITY FOR EACH REGION INVOLVED data_frames
+    for df in dfs_ts_regions_involved:
+        dfs_ts.append(df)
+        
+    # add ALSFRS PATIENT WITH GASTROSTOMY data_frames
+    for df in dfs_ts_patient_with_gastrostomy:
+        dfs_ts.append(df)
+
+    # create a copy of patients dataFrame
+    df_biomarkers_at_time_t = df_patients.copy()
+
+    #get diagnosis delay in months for each patient
+    times_at_diagnosis = df_biomarkers_at_time_t['Diagnosis_Delay']
+
+
+    df_return = df_biomarkers_at_time_t.copy()
+
+    for df_ts, biomarker_name in dfs_ts:
+        # get biomarkers values at diagnosis
+        df_return = get_biomarker_value_at_time_t(
+            df_patients=df_return, 
+            df_ts=df_ts, 
+            time_t=times_at_diagnosis, 
+            biomarker_name=biomarker_name, 
+            time_t_description='Diagnosis',
+            use_these_times_t=times_at_diagnosis,
+        )
+
+    return df_return    
+
+
+
+def generate_biomarkers_at_diagnosis(df_patients, dir_time_series_data):
+        
+    # read FVC TimeSeries
+    data_file = f'{dir_time_series_data}/FVC_TimeSeries.csv'
+    df_ts_fvc = pd.read_csv(data_file, delimiter=',')
+
+    # read SVC TimeSeries
+    data_file = f'{dir_time_series_data}/SVC_TimeSeries.csv'
+    df_ts_svc = pd.read_csv(data_file, delimiter=',')
+
+    # read BMI TimeSeries
+    data_file = f'{dir_time_series_data}/BMI_TimeSeries.csv'
+    df_ts_bmi = pd.read_csv(data_file, delimiter=',')
+
+
+    dfs_ts = [
+        [df_ts_fvc, 'FVC'],
+        [df_ts_bmi, 'BMI'],
+        [df_ts_svc, 'SVC'],
+    ]
+
+
+    # create a copy of patients dataFrame
+    df_biomarkers_at_time_t = df_patients.copy()
+
+    #get diagnosis delay in months for each patient
+    times_at_diagnosis = df_biomarkers_at_time_t['Diagnosis_Delay']
+
+
+    df_return = df_biomarkers_at_time_t.copy()
+
+    for df_ts, biomarker_name in dfs_ts:
+        # get biomarkers values at diagnosis
+        df_return = get_biomarker_value_at_time_t(
+            df_patients=df_return, 
+            df_ts=df_ts, 
+            time_t=times_at_diagnosis, 
+            biomarker_name=biomarker_name, 
+            time_t_description='Diagnosis',
+            use_these_times_t=times_at_diagnosis,
+        )
+
+    #
+    return df_return    
+
+
+
+def get_biomarker_value_at_time_t(df_patients, df_ts, time_t, biomarker_name, 
+            time_t_description=None, use_this_column_as_time_t=None, use_these_times_t=None):
+    
+    # copy dataFrame
+    df_joined = df_patients.copy()
+
+    # Param "time_t_description" must be informed when using "use_this_column_as_time_t"
+    if (use_this_column_as_time_t is not None) & (time_t_description is None):
+        raise Exception('Param "time_t_description" must be informed when using "use_this_column_as_time_t"')
+    
+    # if not informed 'time_t_description' use 'time_t' as description
+    if (time_t_description is None) & (use_this_column_as_time_t is None):
+        time_t_description = f'{time_t}'
+
+    # create column to store the biomarker value at time t
+    col_created = f'{biomarker_name}_at_{time_t_description}'
+
+    # create the column with NaN
+    df_joined[col_created] = np.NaN
+
+    # counters for success and errors
+    count_err = 0
+    count_upd = 0
+
+
+    for index, row in df_joined.iterrows():
+        # get the subject ID
+        subject_id = row['subject_id']
+
+        # locate the patient in Time-Series dataFrame (df_ts)
+        patient = df_ts.loc[(df_ts['subject_id'] == subject_id)].copy()
+
+        # if found the patient in the Time-Series dataFrame
+        if patient.shape[0] > 0:
+
+            # if was to use specific column as time-t (e.g., "Diagnosis_Delay")
+            if use_this_column_as_time_t is not None:
+                time_t = row[use_this_column_as_time_t]
+
+            # if was to use specific Series to time-t
+            if use_these_times_t is not None:
+                time_t = use_these_times_t.loc[index]
+
+            # verify if time-t is negative
+            if time_t < 0.0:
+                time_t = 0.0    
+
+            # get timet_t as string to be used as the name of time-t column
+            col_time = str(time_t)
+
+            # get the value at time t
+            value_at_time_t = patient[col_time].head(1).values[0]
+
+            try:
+                # get row to be updated with value-at-time-t
+                to_update = df_joined.loc[(df_joined['subject_id']==subject_id)].copy()
+                # set biomarker value at time t
+                df_joined.loc[to_update.index, col_created] = value_at_time_t
+                count_upd += 1
+
+                # print(f"value_at_time_t: {value_at_time_t}\n")
+                # print(patient)
+                # print(to_update)
+                # break
+            except Exception as err:
+                print(f"ERROR: subject_id   : {subject_id}")
+                print(f"       Time t       : {time_t}")
+                print(f"       Row at time t: {value_at_time_t}")
+                print(f"                      {type(value_at_time_t)}")
+                print()    
+                print(f"   Error Type: {type(err)}") # the exception instance
+                print(f"         Msg : {err}") # __str__ allows args to be printed directly
+                print(f"         Msg : {err.args}") # arguments stored in .args
+                utils.print_string_with_separators('DF_JOINED')
+                print(df_joined.loc[(df_joined['subject_id']==subject_id)])
+                utils.print_string_with_separators('PATIENT')
+                print(patient)
+
+                count_err += 1
+                pass
+            
+    
+    # return            
+    return df_joined
+
+
+
+
 def generate_time_series_bmi(df_temporal, dir_dest):
     # Get values by month up to 72 months (i.e., 6 years)
     n_years = 10
