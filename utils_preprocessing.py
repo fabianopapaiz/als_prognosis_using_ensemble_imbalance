@@ -17,6 +17,215 @@ import utils
 
 
 '''
+Preprocess ALSFRS data
+'''
+def preprocess_alsfrs(df_to_process, data_dir):
+    df = df_to_process.copy()
+
+    # Read data from the raw ALSFRS CSV file
+    data_file = f'{data_dir}/PROACT_ALSFRS.csv'
+    df_raw = pd.read_csv(data_file, delimiter=',', 
+                        dtype={'Mode_of_Administration': 'str', 
+                                'ALSFRS_Responded_By': 'str'}
+                        )
+
+    # Drop rows with NaN value in the ALSFRS_Delta column
+    to_delete = df_raw.loc[(df_raw.ALSFRS_Delta.isnull())].copy()
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+
+    # Remove unnecessary columns
+    cols_to_remove = ['Mode_of_Administration','ALSFRS_Responded_By']
+    df_raw.drop(columns=cols_to_remove, inplace=True)
+
+
+    # Create the Q5 column to compute the correct value for Question-5,
+    # which is divided in a) and b) subparts
+    df_raw['Q5_Cutting'] = np.NaN
+    df_raw['Patient_with_Gastrostomy'] = np.NaN
+
+    # without Gastrostomy
+    df_raw.loc[(df_raw['Q5a_Cutting_without_Gastrostomy'].isnull()==False), 'Q5_Cutting'] = df_raw['Q5a_Cutting_without_Gastrostomy']
+    df_raw.loc[(df_raw['Q5a_Cutting_without_Gastrostomy'].isnull()==False), 'Patient_with_Gastrostomy'] = False
+
+    # with Gastrostomy
+    df_raw.loc[(df_raw['Q5b_Cutting_with_Gastrostomy'].isnull()==False), 'Q5_Cutting'] = df_raw['Q5b_Cutting_with_Gastrostomy']
+    df_raw.loc[(df_raw['Q5b_Cutting_with_Gastrostomy'].isnull()==False), 'Patient_with_Gastrostomy'] = True
+
+    #drop columns Q5a and Q5b
+    df_raw.drop(columns=['Q5a_Cutting_without_Gastrostomy', 'Q5b_Cutting_with_Gastrostomy'], axis=1, inplace=True)
+
+
+    # Join question 10 from ALSFRS with question 10 (dyspnea) from ALSFRS-R
+    to_update = df_raw.loc[
+        (df_raw.Q10_Respiratory.isnull())
+        &(df_raw.R_1_Dyspnea.isnull()==False)
+    ].copy()
+    # set ALSFRS-R Q10_Respiratory equal to R_1_Dyspnea 
+    df_raw.loc[to_update.index, 'Q10_Respiratory'] = df_raw['R_1_Dyspnea']
+
+
+    # Delete rows having NaN in the Q1 to Q10 columns
+    to_delete = df_raw.loc[
+          (df_raw.Q1_Speech.isnull())
+        | (df_raw.Q2_Salivation.isnull())
+        | (df_raw.Q3_Swallowing.isnull())
+        | (df_raw.Q4_Handwriting.isnull())
+        | (df_raw.Q5_Cutting.isnull())
+        | (df_raw.Q6_Dressing_and_Hygiene.isnull())
+        | (df_raw.Q7_Turning_in_Bed.isnull())
+        | (df_raw.Q8_Walking.isnull())
+        | (df_raw.Q9_Climbing_Stairs.isnull())
+        | (df_raw.Q10_Respiratory.isnull())
+    ].copy()
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+
+
+    # Get only necessary columns
+    df_raw = df_raw[[
+            'subject_id',
+            'Q1_Speech',
+            'Q2_Salivation',
+            'Q3_Swallowing',
+            'Q4_Handwriting',
+            'Q5_Cutting',
+            'Q6_Dressing_and_Hygiene',
+            'Q7_Turning_in_Bed',
+            'Q8_Walking',
+            'Q9_Climbing_Stairs',
+            'Q10_Respiratory',
+            'ALSFRS_Delta',
+            # 'ALSFRS_Total',
+            'Patient_with_Gastrostomy',
+            ]].copy()
+    
+
+    # Join the 2 datasets to calcute ALSFRS Delta from Symptoms_Onset
+    # get only columns subject_id and Symptoms_Onset_Delta
+    df_patients = df[[
+        'subject_id', 
+        'Symptoms_Onset_Delta'
+    ]].copy()
+
+    df_raw = utils.join_datasets_by_key(
+        df_main=df_raw, 
+        df_to_join=df_patients, 
+        key_name='subject_id', 
+        raise_error=True
+    )
+
+    # Create Delta_from_Symptoms_Onset columns (in  days and months)
+    #calculate in DAYS
+    df_raw['Delta_from_Symptoms_Onset_in_Days'] = df_raw.ALSFRS_Delta + np.abs(df_raw.Symptoms_Onset_Delta)
+
+    #calculate in MONTHS
+    df_raw['Delta_from_Symptoms_Onset'] = np.NaN
+    in_months = df_raw['Delta_from_Symptoms_Onset_in_Days'].apply( lambda x: utils.calculate_months_from_days(x)) 
+    df_raw.loc[df_raw.index,'Delta_from_Symptoms_Onset'] = in_months
+
+    # Delete some unnecessary columns and
+    to_delete = [
+        'Symptoms_Onset_Delta', 
+    ]
+    df_raw.drop(
+        columns=to_delete, 
+        inplace=True
+    )
+
+    # Delete rows that have Delta_from_Symptoms_Onset = NaN
+    to_delete = df_raw.loc[
+        (df_raw.Delta_from_Symptoms_Onset.isnull()==True)
+    ]
+    df_raw = utils.remove_rows(df=df_raw, to_delete=to_delete, verbose=False)
+
+
+    # Solve the problem were rows have duplicated Delta_from_Symptoms_Onset
+    # sort rows by 'subject_id', 'Delta_from_Symptoms_Onset'
+    df_remove_duplicated = df_raw.sort_values(['subject_id', 'Delta_from_Symptoms_Onset_in_Days'])
+    
+    #get only the last row for each 'subject_id' and'Delta_from_Symptoms_Onset'
+    df_remove_duplicated = df_remove_duplicated.groupby(['subject_id', 'Delta_from_Symptoms_Onset']).last().reset_index()
+    
+    df_raw = df_remove_duplicated.copy()
+
+
+    # =======================================================================
+    # Calculate the Slopes from Onset for each row for ALSFRS
+    # =======================================================================
+    
+    # Sort the data by subject_id and Delta_from_Symptoms_Onset_in_Days columns
+    df_raw.sort_values(by=['subject_id','Delta_from_Symptoms_Onset_in_Days'], inplace=True)
+    
+    # Create Slopes for each ALSFRS question (1−10)
+    cols_to_create = [
+        'Q1_Speech', 
+        'Q2_Salivation',       
+        'Q3_Swallowing', 
+        'Q4_Handwriting', 
+        'Q5_Cutting',
+        'Q6_Dressing_and_Hygiene', 
+        'Q7_Turning_in_Bed', 
+        'Q8_Walking', 
+        'Q9_Climbing_Stairs',
+        'Q10_Respiratory', 
+    ]
+    max_score = 4
+
+    for col in cols_to_create:
+        #define name of the column to create
+        c = f'Slope_from_Onset_{col}'
+        #create the column
+        df_raw[c] = np.NaN
+        # calculate the slope = (Max_SubScore - SubScore)/Delta_from_Symptoms_Onset
+        slope = (max_score - df_raw[col]) / df_raw['Delta_from_Symptoms_Onset']
+        # round to 2 decimal places
+        df_raw[c] = np.round(slope, 2) 
+
+
+    # =======================================================================
+    # Create Regions-Involved Groups and set their values
+    # =======================================================================
+    # Their values can be TRUE or FALSE, being TRUE will indicate the lost of at least 1 point in the maximum region score:
+    # - Bulbar     = questions 1–3     Max. region score = 12
+    # - Upper Limb = questions 4–5     Max. region score = 8 
+    # - Lower Limb = questions 8–9     Max. region score = 8 
+    # - Respiratory= question  10      Max. region score = 4
+    #
+    #      Reference: Manera et. al. (2019)
+
+    # create Region_Involved_Bulbar column
+    df_raw['Region_Involved_Bulbar'] = \
+        ((df_raw['Q1_Speech'] + df_raw['Q2_Salivation'] + df_raw['Q3_Swallowing']) < 12) * 1.0
+
+    # create Region_Involved_Upper_Limb column
+    df_raw['Region_Involved_Upper_Limb'] = \
+        ((df_raw['Q4_Handwriting'] + df_raw['Q5_Cutting'] ) < 8) * 1.0
+
+    # create Region_Involved_Lower_Limb column
+    df_raw['Region_Involved_Lower_Limb'] = \
+        ((df_raw['Q8_Walking'] + df_raw['Q9_Climbing_Stairs'] ) < 8) * 1.0
+
+    # create Region_Involved_Respiratory column
+    df_raw['Region_Involved_Respiratory'] = ((df_raw['Q10_Respiratory']) < 4) * 1.0
+
+    # Create Qty-Regions-Involved summing all 4 groups (Bulbar, Upper Limb, Lower Limb, Respiratory)
+
+    # create column
+    df_raw['Qty_Regions_Involved'] = np.NaN
+
+    # sum the 4 groups
+    df_raw['Qty_Regions_Involved'] = \
+        df_raw['Region_Involved_Bulbar'] + df_raw['Region_Involved_Upper_Limb']  \
+        + df_raw['Region_Involved_Lower_Limb'] + df_raw['Region_Involved_Respiratory'] 
+
+
+
+
+    #
+    return df_raw
+
+
+
+'''
 Preprocess EL_ESCORIAL data
 '''
 def preprocess_el_escorial(df_to_process, data_dir):

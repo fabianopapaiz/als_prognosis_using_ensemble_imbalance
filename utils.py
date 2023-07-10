@@ -883,14 +883,15 @@ def plot_heatmap(data, cmap=['#0050bb', '#ff7b7b'], cbar=True, title="", figsize
 
 
 # Remove (Drop) from dataset the rows-index informed (to_delete)
-def remove_rows(df, to_delete, info=''):
+def remove_rows(df, to_delete, info='', verbose=True):
     rows_previous = get_quantity_of_rows(df)
     rows_to_delete = get_quantity_of_rows(to_delete)
 
     df = df.drop(to_delete.index)
     rows_after = get_quantity_of_rows(df)
 
-    print(f'  - {info} Previous={rows_previous}, To delete={rows_to_delete}, After={rows_after}')
+    if verbose:
+        print(f'  - {info} Previous={rows_previous}, To delete={rows_to_delete}, After={rows_after}')
 
     # print(f'  - Samples Before  : {rows_previous}')
     # print(f'  - Samples Removed : {rows_to_delete}')
