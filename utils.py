@@ -15,8 +15,6 @@ from dateutil import relativedelta
 
 
 CLASS_NAME = 'Short_Survival'
-SLOW = 'Long'
-RAPID = 'Short'
 
 CODE_VALUES_1 = {
     0.0: 0,
@@ -87,65 +85,111 @@ def get_train_and_validation_data(dir_data=None, return_training_sets=False):
     return X_train, y_train, X_valid, y_valid, X_all, y_all
 
 
-def get_decoded_data_frame(df, scaled=False, undo_dummy_sex_male=False, print_code_value=False, clean_feat_values=False):
+def get_decoded_data(df, add_coded_value=False):
+    #, , print_code_value=False, clean_feat_values=False):
+    
     df_decoded = df.copy()
-
-    for col in df_decoded.columns:
-        series = df_decoded[col]
-        df_decoded[col] = get_coded_to_string(series=series, scaled=scaled, print_code_value=print_code_value)
-
-        if col.endswith('_Coded'):
-            df_decoded.rename(columns={col: col.replace('_Coded', '')}, inplace=True)
+    
+    # verify if the values are scaled by checking the Diagnosis_Delay column 
+    scaled = (sorted(df.Diagnosis_Delay.unique()) == [0.0, 0.5, 1.0])
 
 
+    # check if need to un-dummy the Sex_Male column
+    undo_dummy_sex_male = ('Sex_Male' in df_decoded.columns)
     if undo_dummy_sex_male:
+
         series_sex = undo_dummy_variable(
             series=df_decoded.Sex_Male,
-            map_values={'Yes': 'Male', 'No': 'Female'},
+            map_values={1: 'Male', 0: 'Female'},
             new_col_name='Sex'
         )
+
         df_decoded.Sex_Male = series_sex
         df_decoded.rename(columns={'Sex_Male': 'Sex'}, inplace=True)
 
+    for col in df_decoded.columns:
+        series = df_decoded[col]
+        df_decoded[col] = get_coded_to_string(
+            series=series, 
+            scaled=scaled, 
+            add_coded_value=add_coded_value
+        )
 
-    if clean_feat_values:
-        for c in df_decoded.columns:     
-            df_decoded[c] = df_decoded[c].apply(lambda x: clean_feature_values(x))
+    #     if col.endswith('_Coded'):
+    #         df_decoded.rename(columns={col: col.replace('_Coded', '')}, inplace=True)
 
 
+    # if clean_feat_values:
+    #     for c in df_decoded.columns:     
+    #         df_decoded[c] = df_decoded[c].apply(lambda x: clean_feature_values(x))
+
+    #
     return df_decoded    
 
 
-def get_coded_to_string(series, scaled=False, print_code_value=False):
+
+
+def get_decoded_data_frame(df, scaled=False, undo_dummy_sex_male=False, print_code_value=False, clean_feat_values=False):
+    raise Exception('Use the get_decoded_data() method instead this method.')
+
+    # df_decoded = df.copy()
+
+    # for col in df_decoded.columns:
+    #     series = df_decoded[col]
+    #     df_decoded[col] = get_coded_to_string(series=series, scaled=scaled, add_coded_value=print_code_value)
+
+    #     if col.endswith('_Coded'):
+    #         df_decoded.rename(columns={col: col.replace('_Coded', '')}, inplace=True)
+
+
+    # if undo_dummy_sex_male:
+    #     series_sex = undo_dummy_variable(
+    #         series=df_decoded.Sex_Male,
+    #         map_values={'Yes': 'Male', 'No': 'Female'},
+    #         new_col_name='Sex'
+    #     )
+    #     df_decoded.Sex_Male = series_sex
+    #     df_decoded.rename(columns={'Sex_Male': 'Sex'}, inplace=True)
+
+
+    # if clean_feat_values:
+    #     for c in df_decoded.columns:     
+    #         df_decoded[c] = df_decoded[c].apply(lambda x: clean_feature_values(x))
+
+
+    # return df_decoded    
+
+
+def get_coded_to_string(series, scaled=False, add_coded_value=False):
     col = series.name
 
     if col in ['Diagnosis_Delay_Coded', 'Diagnosis_Delay']:
         series = series.apply(lambda x: get_coded_diagnosis_delay_to_string(x, scaled=scaled, 
-                                                                            print_code_value=print_code_value))
+                                                                            add_coded_value=add_coded_value))
 
-    elif col in ['Age_Range_at_Onset_Coded', 'Age_Range_at_Onset']:
+    elif col in ['Age_Range_at_Onset_Coded', 'Age_Range_at_Onset', 'Age_at_Onset']:
         series = series.apply(lambda x: get_coded_age_range_to_string(x, scaled=scaled, 
-                                                                      print_code_value=print_code_value))
+                                                                      add_coded_value=add_coded_value))
 
     elif col in ['Site_Onset_Coded', 'Site_Onset']:
         series = series.apply(lambda x: get_coded_site_onset_to_string(x, scaled=scaled, 
-                                                                       print_code_value=print_code_value))
+                                                                       add_coded_value=add_coded_value))
 
     elif col.startswith('FVC'):
         series = series.apply(lambda x: get_coded_fvc_to_string(x, 
-                                                                print_code_value=print_code_value))
+                                                                add_coded_value=add_coded_value))
 
     elif col.startswith('BMI'):
         series = series.apply(lambda x: get_coded_bmi_to_string(x, scaled=scaled, 
-                                                                print_code_value=print_code_value))
+                                                                add_coded_value=add_coded_value))
 
     elif col.startswith('Q') and '_slope' in col:
         series = series.apply(lambda x: get_coded_alsfrs_slope_to_string(x, scaled=scaled, 
-                                                                         print_code_value=print_code_value))
+                                                                         add_coded_value=add_coded_value))
 
     elif col == 'Survival_Group':
         series = series.apply(lambda x: get_coded_group_survival_to_string(x, 
-                                                                           print_code_value=print_code_value))
+                                                                           add_coded_value=add_coded_value))
 
     elif col in ['Qty_Regions_Involved_at_Diagnosis', 'Qty_Regions_Involved']:
         series = series.apply(lambda x: get_coded_qty_regions_involved_to_string(x, scaled=scaled)).astype(str)
@@ -171,12 +215,10 @@ def get_coded_qty_regions_involved_to_string(code, scaled=False):
 
     if scaled: #[0-1]
         if code == 0.0:
-            text = 0
-        elif code == 0.25:
             text = 1
-        elif code == 0.5:
+        elif code == 0.33:
             text = 2
-        elif code == 0.75:
+        elif code == 0.67:
             text = 3
         elif code == 1.0:
             text = 4
@@ -186,7 +228,7 @@ def get_coded_qty_regions_involved_to_string(code, scaled=False):
     return text
 
 
-def get_coded_group_survival_to_string(code, print_code_value=False):
+def get_coded_group_survival_to_string(code, add_coded_value=False):
     code = float(code)
 
     if code == 0.0:
@@ -199,7 +241,7 @@ def get_coded_group_survival_to_string(code, print_code_value=False):
     return text
 
 
-def get_coded_fvc_to_string(code, print_code_value=False):
+def get_coded_fvc_to_string(code, add_coded_value=False):
     code = float(code)
     
     if code == 0.0:
@@ -211,87 +253,95 @@ def get_coded_fvc_to_string(code, print_code_value=False):
 
     return text
 
-def get_coded_diagnosis_delay_to_string(code, scaled=False, print_code_value=False):
+
+
+def get_coded_diagnosis_delay_to_string(code, scaled=False, add_coded_value=False):
     code = float(code)
     text = None    
 
     if scaled: #[0-1]
         if code == 0.0:
-            text = RAPID
+            text = '(0) Short' if add_coded_value else 'Short'
         elif code == 0.5:
-            text = 'Average'
+            text = '(1) Average' if add_coded_value else 'Average'
         elif code == 1.0:
-            text = SLOW
+            text = '(2) Long' if add_coded_value else 'Long'
 
         #code
         # code = CODE_VALUES_1[code]    
     else:
         if code == 0.0:
-            text = RAPID
+            text = '(0) Short' if add_coded_value else 'Short'
         elif code == 1.0:
-            text = 'Average'
+            text = '(1) Average' if add_coded_value else 'Average'
         elif code == 2.0:
-            text = SLOW
+            text = '(2) Long' if add_coded_value else 'Long'
 
-    return text if not print_code_value else f'({code}) {text}'
+    return text
 
 
-def get_coded_alsfrs_slope_to_string(code, scaled=False, print_code_value=False):
+def get_coded_alsfrs_slope_to_string(code, scaled=False, add_coded_value=False):
     code = float(code)
     text = None    
 
     if scaled: #[0-1]
         if code == 0.0:
-            text = 'Slow'
+            # text = 'Slow'
+            text = '(0) Slow' if add_coded_value else 'Slow'
         elif code == 0.5:
-            text = 'Average'
+            # text = 'Average'
+            text = '(1) Average' if add_coded_value else 'Average'
         elif code == 1.0:
-            text = 'Rapid'
+            # text = 'Rapid'
+            text = '(2) Rapid' if add_coded_value else 'Rapid'
         #code
         code = CODE_VALUES_1[code]    
     else:
         if code == 0.0:
-            text = 'Slow'
+            # text = 'Slow'
+            text = '(0) Slow' if add_coded_value else 'Slow'
         elif code == 1.0:
-            text = 'Average'
+            # text = 'Average'
+            text = '(1) Average' if add_coded_value else 'Average'
         elif code == 2.0:
-            text = 'Rapid'
+            # text = 'Rapid'
+            text = '(2) Rapid' if add_coded_value else 'Rapid'
 
-    return text if not print_code_value else f'({int(code)}) {text}'
+    return text 
 
 
-def get_coded_age_range_to_string(code, scaled=False, print_code_value=False):
+def get_coded_age_range_to_string(code, scaled=False, add_coded_value=False):
     code = float(code)
 
     text = None
     # [0.0, 0.25, 0.5, 0.75, 1.0]
     if scaled:
         if code == 0.0:
-            text = '0-39'  if not print_code_value else '(0) 0-39'
+            text = '0-39'  #if not add_coded_value else '(0) 0-39'
         elif code == 0.25:
-            text = '40-49' if not print_code_value else '(1) 40-49'
+            text = '40-49' #if not add_coded_value else '(1) 40-49'
         elif code == 0.5:
-            text = '50-59' if not print_code_value else '(2) 50-59'
+            text = '50-59' #if not add_coded_value else '(2) 50-59'
         elif code == 0.75:
-            text = '60-69' if not print_code_value else '(3) 60-69'
+            text = '60-69' #if not add_coded_value else '(3) 60-69'
         elif code == 1.0:
-            text = '70+'   if not print_code_value else '(4) 70+'
+            text = '70+'   #if not add_coded_value else '(4) 70+'
     else:
         if code == 0.0:
-            text = '0-39'  if not print_code_value else '(0) 0-39'
+            text = '0-39'  #if not add_coded_value else '(0) 0-39'
         elif code == 1.0:
-            text = '40-49' if not print_code_value else '(1) 40-49'
+            text = '40-49' #if not add_coded_value else '(1) 40-49'
         elif code == 2.0:
-            text = '50-59' if not print_code_value else '(2) 50-59'
+            text = '50-59' #if not add_coded_value else '(2) 50-59'
         elif code == 3.0:
-            text = '60-69' if not print_code_value else '(3) 60-69'
+            text = '60-69' #if not add_coded_value else '(3) 60-69'
         elif code == 4.0:
-            text = '70+'   if not print_code_value else '(4) 70+'
+            text = '70+'   #if not add_coded_value else '(4) 70+'
 
     return text
 
 
-def get_coded_site_onset_to_string(code, scaled=False, print_code_value=False):
+def get_coded_site_onset_to_string(code, scaled=False, add_coded_value=False):
     code = float(code)
 
     text = None    
@@ -308,33 +358,37 @@ def get_coded_site_onset_to_string(code, scaled=False, print_code_value=False):
     return text
 
 
-def get_coded_bmi_to_string(code, scaled=False, print_code_value=False):
+def get_coded_bmi_to_string(code, scaled=False, add_coded_value=False):
     code = float(code)
 
     text = None    
 
     if scaled: #[0-1]
         if code == 0.0:
-            text = '(0) Severely underweight'
-        elif code == 0.25:
-            text = '(1) Underweight'
-        elif code == 0.5:
-            text = '(2) Normal weight'
-        elif code == 0.75:
-            text = '(3) Overweight'
+            # text = '(0) Underweight'
+            text = '(0) Underweight' if add_coded_value else 'Underweight'
+        elif code == 0.33:
+            # text = '(1) Normal'
+            text = '(1) Normal' if add_coded_value else 'Normal'
+        elif code == 0.67:
+            # text = '(2) Overweight'
+            text = '(2) Overweight' if add_coded_value else 'Overweight'
         elif code == 1.0:
-            text = '(4) Obesity'
+            # text = '(3) Obesity'
+            text = '(3) Obesity' if add_coded_value else 'Obesity'
     else:
         if code == 0.0:
-            text = '(0) Severely underweight'
+            # text = '(0) Underweight'
+            text = '(0) Underweight' if add_coded_value else 'Underweight'
         elif code == 1.0:
-            text = '(1) Underweight'
+            # text = '(1) Normal'
+            text = '(1) Normal' if add_coded_value else 'Normal'
         elif code == 2.0:
-            text = '(2) Normal weight'
+            # text = '(2) Overweight'
+            text = '(2) Overweight' if add_coded_value else 'Overweight'
         elif code == 3.0:
-            text = '(3) Overweight'
-        elif code == 4.0:
-            text = '(4) Obesity'
+            # text = '(3) Obesity'
+            text = '(3) Obesity' if add_coded_value else 'Obesity'
   
     return text
 
@@ -960,4 +1014,327 @@ def print_columns_array(df):
     print(']')
 
 
+
+
+def get_string_with_separators(string):
+    sep = '-'*len(string)
+    return f'{sep}\n{string}\n{sep}'
+
+
+def print_string_with_separators(string):
+    print(get_string_with_separators(string=string))
+
+
+
+# plot graphs to compare 2 groups
+def plot_grouped_variable_distribution(series_1, series_2, bins=30, figsize=[15,5], 
+                                       print_more_info=True, plot_one_graph_per_row=False, 
+                                       show_pareto_graph=False, check_normality=True, 
+                                       show_qq_plot=False, title_group_1='Group-1', title_group_2='Group-2'):
+
+    total_of_rows_1 = series_1.count()
+    total_of_rows_2 = series_2.count()
+
+    if (plot_one_graph_per_row) and (figsize==[15,5]):
+        figsize=[15, 13]
+
+    series_dtype = series_1.dtype
+
+    sn = series_1.name
+
+    print(f'==============================================================================')
+    print(f'Column {sn}     (DataType: {series_dtype})')
+    if not print_more_info:
+        print(f'  -{title_group_1} = {total_of_rows_1:>7} rows (GROUP-1)')
+        print(f'  -{title_group_2} = {total_of_rows_2:>7} rows (GROUP-2)')
+    print(f'==============================================================================')
+
+    # lead with boolean values on data_column
+    if series_dtype == bool:
+        series_1 = series_1.map({True: 'YES', False: 'NO'})
+        series_2 = series_2.map({True: 'YES', False: 'NO'})
+        series_dtype = series_1.dtype
+
+
+    if (series_dtype in [float, int]) and (series_1.unique().size <= 2):
+        series_1 = series_1.astype(str)
+        series_2 = series_2.astype(str)
+        series_dtype = series_1.dtype
+
+
+
+    #if variable is CONTINUOUS or INTEGER (DISCRETE)
+    if series_dtype in [float, int]:
+        # boxplot
+        df, col_groups_name = create_data_frame_from_two_groups(series_1=series_1, series_2=series_2, title_group_1=title_group_1, title_group_2=title_group_2)
+        # df.rename(columns={'Group-1': title_group_1, 'Group-2': title_group_2,}, inplace=True)
+        cor1 = 'cornflowerblue'
+        cor2 = 'darkorange'
+
+        my_palette = my_pal = {title_group_1: cor1, title_group_2: cor2}
+        plt.figure(figsize=figsize)
+
+        ax = plt.subplot(2, 2, 1)
+        sns.boxplot(ax=ax, data=df, x=col_groups_name, y=sn, palette=my_palette)
+        plt.title('Boxplot Graph')
+
+        ax = plt.subplot(2, 2, 2)
+        sns.violinplot(ax=ax, x=col_groups_name, y=sn, data=df, palette=my_palette)
+        plt.title('Violin Graph')
+
+        # histogram group-1
+        q = series_1.unique().size
+        if q<=2:
+            b = 2
+        else:
+            b = bins if q > bins else q - 2
+
+        plt.subplot(2, 2, 3)
+        series_1.hist(bins=b, color=cor1)
+        plt.title(f'{title_group_1}\n')
+
+        # histogram group-2
+        q = series_2.unique().size
+        if q<=2:
+            b = 2
+        else:
+            b = bins if q > bins else q - 2
+
+        plt.subplot(2, 2, 4)
+        series_2.hist(bins=b, color=cor2)
+        plt.title(f'{title_group_2}\n')
+        plt.show()
+
+    #
+    #else, if variable is CATEGORICAL
+    else:
+
+        if show_pareto_graph:
+            if figsize==[15, 5]:
+                figsize=[15, 10]
+
+        i = 1
+        i_subplot = 1
+
+        ss = [series_1, series_2]
+        dfs = []
+        plt.figure(figsize=figsize)
+
+        for series in ss:
+            if i == 1:
+                group_name = title_group_1
+            else:
+                group_name = title_group_2
+
+            #create a dataframe to plot the data
+            df_distrib = pd.DataFrame(series.value_counts())
+            df_distrib = df_distrib.reset_index()
+            df_distrib[sn] = df_distrib[sn].astype(float)
+            df_distrib.rename(columns={series.name: 'count', 'index': sn}, inplace=True)
+            sum = df_distrib['count'].sum()
+
+            df_distrib = df_distrib.sort_values(by=sn)
+
+            df_distrib['x'] = '.' + df_distrib[sn].astype(str)
+            df_distrib['percentage'] = np.round(df_distrib['count'] / sum * 100, 2)
+            df_distrib['percentage'] = df_distrib['percentage'].map('{:,.2f}%'.format)
+            df_distrib['cum_sum'] = df_distrib['count'].cumsum()
+            df_distrib['cum_percentage'] = df_distrib['count'].cumsum() / df_distrib['count'].sum() * 100
+
+            # --------------------------------------------
+            # BAR GRAPH (WITH QUANTITY AND PERCENTAGE)
+            # --------------------------------------------
+            ax = plt.subplot(2, 2, i_subplot) if show_pareto_graph else plt.subplot(1, 2, i_subplot)
+
+            # ax = plt.subplot(1, 2, i_subplot)
+            #
+            x = df_distrib['x']
+            y = df_distrib['count']
+            y_cum = df_distrib['cum_percentage']
+
+            # plot bar graph
+            plt.title(f'{group_name} (Column {series.name})\n')
+            sns.barplot(ax=ax, x=x, y=y)
+            ax.set_xlabel(sn)
+            show_quantity_and_percentage_on_bars(ax=ax, total_of_rows=sum)
+
+            #plot cumulative line
+            ax2 = ax.twinx()
+            ax2.plot(x, y_cum, color='blue', marker='D', ms=4, alpha=0.5)
+            ax2.yaxis.set_major_formatter(PercentFormatter())
+            ax2.spines['right'].set_color('#a70000')
+            ax2.tick_params(axis='y', colors='blue', grid_color='blue', grid_alpha=0.5, grid_linestyle='--')
+
+
+            if show_pareto_graph:
+                # --------------------------------------------
+                # PARETO GRAPH
+                # --------------------------------------------
+                # calculate the cumulative percentage
+                df_distrib = df_distrib.sort_values(by='count', ascending=False)
+                df_distrib['cum_percentage'] = df_distrib['count'].cumsum() / df_distrib['count'].sum() * 100
+
+                # chech if is to plot the graphs in [1 row X 2 cols] or in [1 col X 2 rows]
+                i_subplot += 1
+                ax = plt.subplot(2, 2, i_subplot) if show_pareto_graph else plt.subplot(1, 2, i_subplot)
+                #
+                plt.title(f'{group_name} Cumulative Percentage (Pareto Graph)\n')
+
+                # Plot Pareto graph
+                x = df_distrib['x']
+                y = df_distrib['count']
+                ax = sns.barplot(x, y)
+                ax.set_xlabel(sn)
+                show_quantity_and_percentage_on_bars(ax=ax, total_of_rows=sum)
+
+                # Plot lines with cumulative percentage
+                ax2 = ax.twinx()
+                y_cum_perc = df_distrib['cum_percentage']
+                ax2.plot(x, y_cum_perc, color='#a70000', marker='D', ms=5, alpha=0.5)
+                ax2.yaxis.set_major_formatter(PercentFormatter())
+                ax2.spines['right'].set_color('#a70000')
+                ax2.tick_params(axis='y', colors='red', grid_color='red', grid_alpha=0.5, grid_linestyle='--')
+
+            dfs.append(df_distrib)
+            i += 1
+            i_subplot += 1
+
+
+        #
+        plt.show()
+
+        # create and print a DataFrame with values of 2 groups
+        df_1 = dfs[0].rename(columns={'count': f'{title_group_1}_Count', 'percentage': f'{title_group_1}_Perc.'})
+        df_1 = df_1.drop(['x', 'cum_sum', 'cum_percentage'], axis=1)
+
+        df_2 = dfs[1].rename(columns={'count': f'{title_group_2}_Count', 'percentage': f'{title_group_2}_Perc.'})
+        df_2 = df_2.drop(['x', 'cum_sum', 'cum_percentage'], axis=1)
+
+        df = join_datasets_by_key(df_main=df_1, df_to_join=df_2, key_name=sn, how='outer')
+        df = df.rename(columns={sn: 'Values'})
+        df = df.sort_values(by='Values', ascending=True)
+
+        print(df)
+        print()
+
+    if print_more_info:
+        print_grouped_variable_distribution(series_1=series_1,
+                                            series_2=series_2,
+                                            check_normality=check_normality,
+                                            show_qq_plot=show_qq_plot,
+                                            title_group_1=title_group_1,
+                                            title_group_2=title_group_2,
+                                            )    
+        
+
+# Print the distribution of one given column
+def print_grouped_variable_distribution(series_1, series_2, check_normality=True, show_qq_plot=True, title_group_1='Group-1', title_group_2='Group-2'):
+
+    s_name = series_1.name
+    s_dtype =series_1.dtype
+
+    # if variable is CONTINUOUS or INTEGER
+    if s_dtype in [float, int]:
+        # group-1 stats
+        N1, mean1, median1, min1, max1, std1, var1, coef_var1, sem1, q251, q501, q751, IQR1, out_thres_low1, out_thres_up1, skewness1, kurtosis1 = \
+            get_stats_from_serie(series_1)
+
+        # group-2 stats
+        # group-1 stats
+        N2, mean2, median2, min2, max2, std2, var2, coef_var2, sem2, q252, q502, q752, IQR2, out_thres_low2, out_thres_up2, skewness2, kurtosis2 = \
+            get_stats_from_serie(series_2)
+
+        #
+        g1 = title_group_1
+        g2 = title_group_2
+
+        print(f'GROUPS STATISTIC COMPARISON')
+        print(f'           {g1:>20} {g2:>20}')
+        print(f'N          {N1:>20} {N2:>20}')
+
+        s1 = f'{mean1:.2f} +/-{std1:.2f}'
+        s2 = f'{mean2:.2f} +/-{std2:.2f}'
+        print(f'Mean       {s1:>20} {s2:>20}')
+        print(f'SEM        {sem1:>20.2f} {sem2:>20.2f}')
+        print(f'Variance   {var1:>20.2f} {var2:>20.2f}')
+        print(f'Median     {median1:>20.2f} {median2:>20.2f}')
+
+        s1 = f'{min1:.2f} / {max1:.2f}'
+        s2 = f'{min2:.2f} / {max2:.2f}'
+        print(f'Min/Max    {s1:>20} {s2:>20}')
+
+        print(f'Skewness   {skewness1:>20} {skewness2:>20}')
+        print(f'Kurtosis   {kurtosis1:>20} {kurtosis1:>20}')
+
+        print(f'Quartiles:')
+        print(f' -Q1 (25%) {q251:>20.2f} {q252:>20.2f}')
+        print(f' -Q2 (50%) {q501:>20.2f} {q502:>20.2f}')
+        print(f' -Q3 (75%) {q751:>20.2f} {q752:>20.2f}')
+        print(f' -IQR      {IQR1:>20.2f} {IQR2:>20.2f}')
+
+        print(f'Outliers:')
+        out_count1 = series_1.loc[(series_1 < out_thres_low1) | (series_1 > out_thres_up1)].count()
+        out_count2 = series_2.loc[(series_2 < out_thres_low2) | (series_2 > out_thres_up2)].count()
+        print(f' -Count    {out_count1:>20} {out_count2:>20}')
+        print(f' -Threshold (IQR * +/-1.5):')
+        print(f'   -Lower  {out_thres_low1:>20.2f} {out_thres_low2:>20.2f}')
+        print(f'   -Upper  {out_thres_up1:>20.2f} {out_thres_up2:>20.2f}')
+
+
+        print()
+
+
+
+#retun only the samples without NaN Values
+def remove_nans_from_serie(serie):
+    return serie[serie.isna() == False]
+
+
+# get
+def get_stats_from_serie(series):
+    N = series.count()
+    mean = series.mean()
+    min = series.min()
+    max = series.max()
+    median = series.median()
+    std_dev = series.std()
+    variance = series.var()
+    coef_variation = std_dev / mean
+    skewness = get_skewness(series, short_description=True)
+    kurtosis = get_kurtosis(series, short_description=True)
+    sem = std_dev / np.sqrt(N)
+    #
+    q25 = series.quantile(q=0.25)
+    q50 = series.quantile(q=0.5)
+    q75 = series.quantile(q=0.75)
+
+    Q1 = q25
+    Q3 = q75
+    IQR = Q3 - Q1
+
+    outliers_threshold_lower = (Q1 - 1.5 * IQR)
+    if outliers_threshold_lower < min:
+        outliers_threshold_lower = min
+
+    outliers_threshold_upper = (Q3 + 1.5 * IQR)
+    if outliers_threshold_upper > max:
+        outliers_threshold_upper = max
+
+    return N, mean, median, min, max, std_dev, variance, coef_variation, sem, q25, q50, q75, IQR, outliers_threshold_lower, outliers_threshold_upper, skewness, kurtosis
+
+
+# create a data-frame joining the 2 groups, labelling groups (Group-1 and Group-2)
+def create_data_frame_from_two_groups(series_1, series_2, title_group_1='Group-1', title_group_2='Group-2'):
+    col_group_name = 'Group'
+    #
+    df_1 = pd.DataFrame(series_1)
+    df_1[col_group_name] = title_group_1
+    #
+    df_2 = pd.DataFrame(series_2)
+    df_2[col_group_name] = title_group_2
+    #
+    # df = df_1.append(df_2)
+    df = pd.concat([df_1, df_2])
+    #
+    return df, col_group_name
 
