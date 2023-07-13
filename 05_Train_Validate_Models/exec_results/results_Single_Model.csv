@@ -1,0 +1,13 @@
+Dataset,Features,Model,BalAcc,Sens,Spec,f1,AUC,Acc,Prec,Classifier,Hyperparams
+Single-Model,All Features,Naïve Bayes,0.81,0.78,0.83,0.53,0.88,0.82,0.41,ComplementNB,"{'alpha': 0.5, 'norm': False}"
+Single-Model,All Features,Naïve Bayes,0.8,0.77,0.83,0.53,0.88,0.83,0.41,ComplementNB,"{'alpha': 0.1, 'norm': False}"
+Single-Model,All Features,Random Forest,0.8,0.72,0.87,0.56,0.9,0.85,0.46,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 5, 'n_estimators': 50, 'random_state': 42}"
+Single-Model,All Features,Naïve Bayes,0.78,0.68,0.89,0.56,0.88,0.86,0.48,GaussianNB,{}
+Single-Model,All Features,Decision Tree,0.77,0.75,0.79,0.47,0.82,0.78,0.35,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 5, 'random_state': 42}"
+Single-Model,All Features,Neural Networks,0.71,0.44,0.97,0.54,0.89,0.9,0.69,MLPClassifier,"{'activation': 'relu', 'alpha': 0.1, 'hidden_layer_sizes': 23, 'learning_rate': 'constant', 'learning_rate_init': 0.7, 'max_iter': 300, 'random_state': 42, 'solver': 'sgd'}"
+Single-Model,All Features,SVM,0.68,0.38,0.98,0.52,0.91,0.91,0.8,SVC,"{'C': 0.3, 'class_weight': None, 'gamma': 'auto', 'kernel': 'linear', 'probability': True, 'random_state': 42}"
+Single-Model,All Features,SVM,0.66,0.33,0.99,0.47,0.91,0.9,0.82,SVC,"{'C': 0.1, 'class_weight': None, 'gamma': 'auto', 'kernel': 'linear', 'probability': True, 'random_state': 42}"
+Single-Model,All Features,k-NN,0.64,0.3,0.97,0.4,0.77,0.89,0.62,KNeighborsClassifier,"{'metric': 'manhattan', 'n_neighbors': 5, 'weights': 'distance'}"
+Single-Model,All Features,k-NN,0.59,0.96,0.23,0.27,0.59,0.32,0.15,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 0.3, 'weights': 'distance'}"
+Single-Model,All Features,SVM,0.5,0.0,1.0,0.0,0.91,0.87,0.0,SVC,"{'C': 0.1, 'class_weight': None, 'gamma': 'auto', 'kernel': 'rbf', 'probability': True, 'random_state': 42}"
+Single-Model,All Features,SVM,0.5,0.0,1.0,0.01,0.91,0.87,0.2,SVC,"{'C': 0.3, 'class_weight': None, 'gamma': 'auto', 'kernel': 'rbf', 'probability': True, 'random_state': 42}"

@@ -14,7 +14,7 @@ from dateutil import relativedelta
 
 
 
-CLASS_NAME = 'Short_Survival'
+CLASS_COLUMN = 'Survival_Group'
 
 CODE_VALUES_1 = {
     0.0: 0,
@@ -57,32 +57,41 @@ def get_relevant_features_names():
 
 def get_inputs_and_output_variables(df):
     
-    features_all = get_relevant_features_names()
+    input_cols = list(df.columns)
 
-    X    = df[features_all].copy() 
-    y    = pd.DataFrame(df[CLASS_NAME].values, columns=['Survival_Group'])
+    input_cols.remove(CLASS_COLUMN)
+
+    X    = df[input_cols].copy() 
+    y    = pd.DataFrame(df[CLASS_COLUMN].values, columns=[CLASS_COLUMN])
 
     return X, y
 
 
-def get_train_and_validation_data(dir_data=None, return_training_sets=False):
+def get_train_and_validation_data(dir_data=None, scaled=False, coded=False):
 
     if dir_data is None:
-        dir_data = os.path.abspath('../data')
+        dir_data = os.path.abspath('training_validation_data/')
+
+    # file suffix
+    suffix = ''
+    if scaled:
+        suffix = '_scaled'
+    elif coded:    
+        suffix = '_coded'
 
     # Training set
-    df_train = read_csv(f'{dir_data}/train_all_data.csv')
+    df_train = read_csv(f'{dir_data}/training_data{suffix}.csv')
     X_train, y_train = get_inputs_and_output_variables(df_train)
 
     # Validation set
-    df_validation = read_csv(f'{dir_data}/validation_all_data.csv')
+    df_validation = read_csv(f'{dir_data}/validation_data{suffix}.csv')
     X_valid, y_valid = get_inputs_and_output_variables(df_validation)
 
 
-    X_all = pd.concat([X_train, X_valid])
-    y_all = pd.concat([y_train, y_valid])
+    # X_all = pd.concat([X_train, X_valid])
+    # y_all = pd.concat([y_train, y_valid])
 
-    return X_train, y_train, X_valid, y_valid, X_all, y_all
+    return X_train, y_train, X_valid, y_valid #, X_all, y_all
 
 
 def get_decoded_data(df, add_coded_value=False):
@@ -1339,3 +1348,127 @@ def create_data_frame_from_two_groups(series_1, series_2, title_group_1='Group-1
     #
     return df, col_group_name
 
+
+
+def get_model_description(model_desc):
+    
+    NB_models = [
+        'ComplementNB', 
+        'GaussianNB', 
+        'CategoricalNB',
+        'NB',
+
+    ]
+
+    KNN_models = [
+        'RadiusNeighborsClassifier', 
+        'KNeighborsClassifier',
+        'k-NN', 
+    ]
+
+    NN_models = [
+        'MLPClassifier',
+        'NN',
+    ]
+
+    RF_models = [
+        'RandomForestClassifier',
+        'RF', 
+    ]
+
+    DT_models = [
+        'DecisionTreeClassifier',
+        'DT', 
+    ]
+
+    XGB_models = [
+        'XGBClassifier',
+        # 'XGBoost',
+    ]
+
+    CatBoost_models = [
+        'CatBoostClassifier',
+        # 'CatBoost',
+    ]
+
+    SVM_models = [
+        'SVC', 
+    ]
+
+    BalancedBagging_models = [
+        'BalancedBaggingClassifier',
+        'Bal. Bagging'
+    ]
+
+    if model_desc in NB_models:
+        return 'Naïve Bayes'
+    elif model_desc in KNN_models:
+        return 'k-NN'
+    elif model_desc in NN_models:
+        return 'Neural Networks'
+    elif model_desc in RF_models:
+        return 'Random Forest'
+    elif model_desc in DT_models:
+        return 'Decision Tree'
+    elif model_desc in SVM_models:
+        return 'SVM'
+    elif model_desc in XGB_models:
+        return 'XGBoost'
+    elif model_desc in CatBoost_models:
+        return 'CatBoost'
+    elif model_desc in BalancedBagging_models:
+        return 'Balanced Bagging'
+    else:
+        return model_desc
+
+
+
+def get_model_short_description(model_desc):
+    
+    NB_models = [
+        'ComplementNB', 
+        'GaussianNB', 
+        'CategoricalNB',
+        'Naïve Bayes',
+    ]
+
+    NN_models = [
+        'MLPClassifier',
+        'Neural Networks',
+    ]
+
+    KNN_models = [
+        'RadiusNeighborsClassifier', 
+        'KNeighborsClassifier',
+        'k-NN', 
+    ]
+
+
+    RF_models = [
+        'RandomForestClassifier',
+        'Random Forest', 
+    ]
+
+    DT_models = [
+        'DecisionTreeClassifier',
+        'Decision Tree', 
+    ]
+
+    BalancedBagging_models = [
+        'BalancedBaggingClassifier',
+    ]
+
+    if model_desc in NB_models:
+        return 'NB'
+    elif model_desc in KNN_models:
+        return 'k-NN'
+    elif model_desc in NN_models:
+        return 'NN'
+    elif model_desc in RF_models:
+        return 'RF'
+    elif model_desc in DT_models:
+        return 'DT'
+    elif model_desc in BalancedBagging_models:
+        return 'Bal. Bagging'
+    else:
+        return model_desc
