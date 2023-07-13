@@ -1153,7 +1153,8 @@ def plot_grouped_variable_distribution(series_1, series_2, bins=30, figsize=[15,
             y_cum = df_distrib['cum_percentage']
 
             # plot bar graph
-            plt.title(f'{group_name} (Column {series.name})\n')
+            # plt.title(f'{group_name} (Column {series.name})\n')
+            plt.title(f'{group_name}\n(n={series.shape[0]})\n')
             sns.barplot(ax=ax, x=x, y=y)
             ax.set_xlabel(sn)
             show_quantity_and_percentage_on_bars(ax=ax, total_of_rows=sum)
