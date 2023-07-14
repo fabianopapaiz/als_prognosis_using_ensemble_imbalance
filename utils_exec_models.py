@@ -25,6 +25,8 @@ from imblearn.over_sampling import SMOTE
 import imblearn.under_sampling as resus
 import imblearn.ensemble as resemb
 import imblearn.combine as reshyb
+from imblearn.ensemble import BalancedBaggingClassifier
+
 
 
 
@@ -92,9 +94,15 @@ def get_grid_search_performances(grid_search,
 
     # create a dict containg all models, params, and performances 
     models_results = [] 
-    for classifier, hyperparams, bal_acc, sens, spec, f1, auc, acc, prec in zip(models, hyperparams, bal_accs, senss, specs, f1s, aucs, accs, precs):
+    for classifier, hyperparam, bal_acc, sens, spec, f1, auc, acc, prec in zip(models, hyperparams, bal_accs, senss, specs, f1s, aucs, accs, precs):
 
         model_desc = get_model_description(classifier)
+
+        hyperparam = str(hyperparam).replace('\n', '').replace('             ','')
+
+        # special config for the Balanced Bagging Classifier 
+        if classifier == 'BalancedBaggingClassifier':
+            hyperparam = "{'n_estimators':" + hyperparam.split(", 'n_estimators':")[1]
 
         models_results.append({
             'Dataset': dataset_info,
@@ -108,7 +116,7 @@ def get_grid_search_performances(grid_search,
             'Acc': acc,
             'Prec': prec,
             'Classifier': classifier,
-            'Hyperparams': str(hyperparams).replace('\n', '').replace('                      ',''),
+            'Hyperparams': hyperparam,
         })
     
     # create a dataFrame containg the results
@@ -622,9 +630,16 @@ def get_models_set_from_results(results_csv_file):
 
     # create model instance from hyperparameters
     for idx, row in df_classifiers.iterrows():
-        params_dict = ast.literal_eval(row.Hyperparams)
-        klass = globals()[row.Classifier]
-        clf = klass(**params_dict)    
+        # params_dict = ast.literal_eval(row.Hyperparams)
+        # klass = globals()[row.Classifier]
+        # clf = klass(**params_dict)    
+
+        m = row.Classifier
+        h = row.Hyperparams
+        clf = create_model_from_string(
+                model=m,
+                hyperparams=h,
+            )
 
         classifiers.append(clf)
 
@@ -669,13 +684,20 @@ def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=Fal
 #   return = {'alpha': 0.05, 'hidden_layer_sizes': (14,), 'learning_rate_init': 0.7, 'max_iter': 1000, 'random_state': 42, 'solver': 'sgd'}
 def convert_hyperparams_to_dict(x):
     
-    if (x.strip() == '') or (str(x).strip == '{}'):
-        return x
+    if type(x) is not str:
+        # print(type(x))
+        x = str(x)
 
-    print(x.strip() == '', f':{x}:')
+    if (x.strip() == ''):
+        # print(x.strip() == '', f':{x}:', type(x))
+        return x
 
 
     x = x.replace('{', '').replace('}', '')
+    
+    if (x.strip() == ''):
+        # print(x.strip() == '', f':{x}:', type(x))
+        return x
 
     # copy x
     string = x
@@ -689,6 +711,8 @@ def convert_hyperparams_to_dict(x):
         string = before + after
 
 
+    string.replace("\n", "")
+
     # Replace ' with " 
     # After, replace "None" with ""
     string = string.replace('\'', '\"').replace(' None', ' ""')
@@ -698,7 +722,6 @@ def convert_hyperparams_to_dict(x):
     string = string.replace(';', ',')
 
     # Replace False/True with "False"/"True" 
-    # After, replace "None" with ""
     string = string.replace(' False', ' "False"').replace(' True', ' "True"')
 
     aux = string.split(', ')
@@ -708,8 +731,8 @@ def convert_hyperparams_to_dict(x):
             s = s_aux.split(':')
             param = f'{s[0].strip()}'
             value = s[1]
-            if '\"' not in value:
-                value = f'"{value.strip()}"' 
+            # if '\"' not in value:
+            #     value = f'"{value.strip()}"' 
             params += f'{param}: {value},'
         except Exception as ex:
             try:
@@ -726,8 +749,8 @@ def convert_hyperparams_to_dict(x):
                 print(s)
                 raise Exception(f'ERROR: {ex}')    
         
-    print('aaaa')
-    print(params)
+    # print('aaaa')
+    # print(params)
     params = '{' + params[:-1] + '}'
     
 
@@ -743,3 +766,38 @@ def convert_hyperparams_to_dict(x):
 
     #    
     return ret
+
+
+
+def create_model_from_string(model, hyperparams, estimator_model=None, estimator_hyperparams=None):
+
+    if str(hyperparams).strip() == '':
+        hyp = dict()
+    else:    
+        hyp = str(hyperparams).replace(": ''", ": None")
+        hyp = hyp.replace(": 'True'", ": True")
+        hyp = hyp.replace(": 'False'", ": False")
+        try:
+            hyp = eval(hyp)
+        except Exception as ex:   
+            print(hyp)
+            # print(f'ERROR: {ex}')
+            print()
+            raise Exception(ex)
+
+
+    # create an model instance passing the hyperparameters
+    klass = globals()[model]
+    classifier = klass(**hyp)
+
+    if estimator_model is not None:
+        # get instance of the estimator for use in the main classifier (e.g., BalanceBagging)
+        estimator = create_model_from_string(
+            model=estimator_model,
+            hyperparams=estimator_hyperparams,
+        )
+        # set the estimator in the main classifier
+        classifier.estimator = estimator
+
+    #
+    return classifier
