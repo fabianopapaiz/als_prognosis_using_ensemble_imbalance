@@ -1,4 +1,12 @@
 
+import ast
+import json
+
+import utils
+import pandas as pd
+import numpy as np
+
+
 import sklearn as sk
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix, f1_score, make_scorer, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import GridSearchCV, cross_validate, train_test_split
@@ -11,10 +19,14 @@ from sklearn.neighbors import KNeighborsClassifier, RadiusNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import svm
+from sklearn.svm import SVC
 
-import utils
-import pandas as pd
-import numpy as np
+from imblearn.over_sampling import SMOTE
+import imblearn.under_sampling as resus
+import imblearn.ensemble as resemb
+import imblearn.combine as reshyb
+
+
 
 # CONSTANT to store the random_state stated for reproducibility issues
 RANDOM_STATE = 42
@@ -96,7 +108,7 @@ def get_grid_search_performances(grid_search,
             'Acc': acc,
             'Prec': prec,
             'Classifier': classifier,
-            'Hyperparams': str(hyperparams),
+            'Hyperparams': str(hyperparams).replace('\n', '').replace('                      ',''),
         })
     
     # create a dataFrame containg the results
@@ -592,3 +604,142 @@ def sort_performances_results(df, cols_order_to_sort=['BalAcc', 'Sens', 'Spec'],
         return df_bests[cols_to_return]
     else:
         return df_bests
+    
+
+ 
+# get a Set of models from the results CSV informed, without repeating
+def get_models_set_from_results(results_csv_file):
+
+    df_classifiers = utils.read_csv(results_csv_file)
+
+    cols = ['Classifier','Hyperparams']
+    df_classifiers = df_classifiers[cols]
+
+    df_classifiers = df_classifiers.groupby(by=cols).first().reset_index()
+    df_classifiers = df_classifiers.sort_values(by=cols)
+
+    classifiers = []
+
+    # create model instance from hyperparameters
+    for idx, row in df_classifiers.iterrows():
+        params_dict = ast.literal_eval(row.Hyperparams)
+        klass = globals()[row.Classifier]
+        clf = klass(**params_dict)    
+
+        classifiers.append(clf)
+
+    #
+    return classifiers   
+
+
+
+
+def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=False):
+    # hyperparams
+    num_estimators = [11, 15, 51, 75, 101, 201, 301]
+    sampling_strategies = ['all', 'majority', 'auto']
+    warm_starts = [False, True]
+
+    if testing:
+        num_estimators = [3] 
+        classifiers = [classifiers[0]]
+        warm_starts = [False]
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "classifier__estimator": classifiers,
+            "classifier__n_estimators": num_estimators,
+            "classifier__sampling_strategy": sampling_strategies,
+            "classifier__warm_start": warm_starts,
+            "classifier__random_state": [RANDOM_STATE],
+            "classifier": [resemb.BalancedBaggingClassifier()]
+        }
+    )    
+
+    return param_grid
+
+
+
+# convert hyperparams to dict
+# Example: 
+#        x = "(alpha=0.05, hidden_layer_sizes=(14,), learning_rate_init=0.7,\n max_iter=1000, random_state=42, solver='sgd')"
+#   return = {'alpha': 0.05, 'hidden_layer_sizes': (14,), 'learning_rate_init': 0.7, 'max_iter': 1000, 'random_state': 42, 'solver': 'sgd'}
+def convert_hyperparams_to_dict(x):
+    
+    if (x.strip() == '') or (str(x).strip == '{}'):
+        return x
+
+    print(x.strip() == '', f':{x}:')
+
+
+    x = x.replace('{', '').replace('}', '')
+
+    # copy x
+    string = x
+    
+    # remove information about covariance matrix present in 'metric_params', 
+    # to not break this function
+    if '{\'VI\':' in string:
+        aux = string.split("'metric_params':")
+        before = aux[0]
+        after = aux[1].split("])},")[1]
+        string = before + after
+
+
+    # Replace ' with " 
+    # After, replace "None" with ""
+    string = string.replace('\'', '\"').replace(' None', ' ""')
+
+    # Replace ; with , 
+    # After, replace "None" with ""
+    string = string.replace(';', ',')
+
+    # Replace False/True with "False"/"True" 
+    # After, replace "None" with ""
+    string = string.replace(' False', ' "False"').replace(' True', ' "True"')
+
+    aux = string.split(', ')
+    params = ''
+    for s_aux in aux:
+        try:
+            s = s_aux.split(':')
+            param = f'{s[0].strip()}'
+            value = s[1]
+            if '\"' not in value:
+                value = f'"{value.strip()}"' 
+            params += f'{param}: {value},'
+        except Exception as ex:
+            try:
+                s = s_aux.split('=')
+                param = f'"{s[0].strip()}"'
+                value = s[1]
+                # if '\"' not in value:
+                #     value = f'"{value.strip()}"' 
+                params += f'{param}: {value},'
+            except Exception as ex:
+                print('<<ERROR>>')
+                print(x, string)
+                print(aux)
+                print(s)
+                raise Exception(f'ERROR: {ex}')    
+        
+    print('aaaa')
+    print(params)
+    params = '{' + params[:-1] + '}'
+    
+
+    # init return variable
+    ret = "<ERRO>"
+    try:
+        # convert string data to dict
+        # ret = ast.literal_eval(params)
+        ret = json.loads(params)
+    except Exception as ex:
+        # print(params)
+        raise Exception(f'ERROR: {ex}')    
+
+    #    
+    return ret

@@ -1472,3 +1472,13 @@ def get_model_short_description(model_desc):
         return 'Bal. Bagging'
     else:
         return model_desc
+
+
+
+def print_array_as_list(arr):
+    print('[')
+
+    for e in arr:
+        print(f"    '{e}',")
+
+    print(']')
