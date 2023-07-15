@@ -724,20 +724,30 @@ def convert_hyperparams_to_dict(x):
     # Replace False/True with "False"/"True" 
     string = string.replace(' False', ' "False"').replace(' True', ' "True"')
 
-    aux = string.split(', ')
+    aux = string.split(', "')
+    # print(aux)
     params = ''
     for s_aux in aux:
         try:
             s = s_aux.split(':')
-            param = f'{s[0].strip()}'
+            # print(s[0][0])
+            if s[0][0] == '\"':
+                param = f'{s[0].strip()}'
+            else:    
+                param = f'"{s[0].strip()}'
             value = s[1]
             # if '\"' not in value:
             #     value = f'"{value.strip()}"' 
             params += f'{param}: {value},'
+            # print(params)
         except Exception as ex:
             try:
                 s = s_aux.split('=')
-                param = f'"{s[0].strip()}"'
+                if s[0][0] == '\"':
+                    param = f'{s[0].strip()}'
+                else:    
+                    param = f'"{s[0].strip()}'
+                # param = f'"{s[0].strip()}"'
                 value = s[1]
                 # if '\"' not in value:
                 #     value = f'"{value.strip()}"' 
@@ -745,6 +755,8 @@ def convert_hyperparams_to_dict(x):
             except Exception as ex:
                 print('<<ERROR>>')
                 print(x, string)
+                print(f' - s = {s}')
+                print(f' - param = {param}')
                 print(aux)
                 print(s)
                 raise Exception(f'ERROR: {ex}')    
@@ -752,6 +764,7 @@ def convert_hyperparams_to_dict(x):
     # print('aaaa')
     # print(params)
     params = '{' + params[:-1] + '}'
+    # print(params)
     
 
     # init return variable
@@ -759,9 +772,10 @@ def convert_hyperparams_to_dict(x):
     try:
         # convert string data to dict
         # ret = ast.literal_eval(params)
-        ret = json.loads(params)
+        # ret = json.loads(params)
+        ret = eval(params)
     except Exception as ex:
-        # print(params)
+        print(params)
         raise Exception(f'ERROR: {ex}')    
 
     #    
