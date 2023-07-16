@@ -1,0 +1,11 @@
+Dataset,Features,Model,BalAcc,Sens,Spec,f1,AUC,Acc,Prec,Classifier,Hyperparams
+Single-Model,All Features,Random Forest,0.7,0.45,0.95,0.52,0.88,0.89,0.6,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 75, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.7,0.45,0.95,0.51,0.87,0.89,0.59,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 50, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.7,0.45,0.95,0.51,0.88,0.89,0.6,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 75, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.7,0.45,0.95,0.51,0.88,0.89,0.59,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 100, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.7,0.44,0.96,0.52,0.88,0.89,0.62,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 200, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.7,0.44,0.96,0.51,0.87,0.89,0.61,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 10, 'n_estimators': 50, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.69,0.42,0.95,0.49,0.88,0.88,0.58,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 50, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.69,0.42,0.95,0.49,0.88,0.88,0.58,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 100, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.69,0.42,0.95,0.49,0.88,0.89,0.59,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'n_estimators': 200, 'random_state': 42}"
+Single-Model,All Features,Random Forest,0.69,0.4,0.97,0.49,0.88,0.89,0.64,RandomForestClassifier,"{'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 10, 'n_estimators': 200, 'random_state': 42}"

@@ -1,0 +1,11 @@
+Dataset,Features,Model,BalAcc,Sens,Spec,f1,AUC,Acc,Prec,Classifier,Hyperparams
+Single-Model,All Features,k-NN,0.71,0.83,0.58,0.36,0.7,0.61,0.23,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'euclidean', 'outlier_label': 1, 'radius': 0.7, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.83,0.58,0.36,0.7,0.61,0.23,RadiusNeighborsClassifier,"{'leaf_size': 100, 'metric': 'euclidean', 'outlier_label': 1, 'radius': 0.7, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.83,0.58,0.36,0.7,0.61,0.23,RadiusNeighborsClassifier,"{'leaf_size': 200, 'metric': 'euclidean', 'outlier_label': 1, 'radius': 0.7, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.61,0.37,0.71,0.64,0.24,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.61,0.37,0.71,0.64,0.24,RadiusNeighborsClassifier,"{'leaf_size': 100, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.61,0.37,0.71,0.64,0.24,RadiusNeighborsClassifier,"{'leaf_size': 200, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.6,0.36,0.71,0.63,0.23,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'distance'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.6,0.36,0.71,0.63,0.23,RadiusNeighborsClassifier,"{'leaf_size': 100, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'distance'}"
+Single-Model,All Features,k-NN,0.71,0.81,0.6,0.36,0.71,0.63,0.23,RadiusNeighborsClassifier,"{'leaf_size': 200, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'distance'}"
+Single-Model,All Features,k-NN,0.7,0.83,0.57,0.35,0.7,0.61,0.22,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'euclidean', 'outlier_label': 1, 'radius': 0.7, 'weights': 'distance'}"

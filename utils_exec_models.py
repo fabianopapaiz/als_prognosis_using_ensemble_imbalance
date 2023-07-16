@@ -583,12 +583,18 @@ def get_model_short_description(model_desc):
         'Decision Tree', 
     ]
 
+    SVM_models = [
+        'SVC', 
+    ]
+
     BalancedBagging_models = [
         'BalancedBaggingClassifier',
     ]
 
     if model_desc in NB_models:
         return 'NB'
+    elif model_desc in SVM_models:
+        return 'SVM'
     elif model_desc in KNN_models:
         return 'k-NN'
     elif model_desc in NN_models:
@@ -598,7 +604,7 @@ def get_model_short_description(model_desc):
     elif model_desc in DT_models:
         return 'DT'
     elif model_desc in BalancedBagging_models:
-        return 'Bal. Bagging'
+        return 'Balanced-Bagging'
     else:
         return model_desc
 
@@ -783,6 +789,52 @@ def convert_hyperparams_to_dict(x):
 
 
 
+def get_models_object_from_results(df_results, add_params_info=True):
+
+    models = []
+
+    ens_imb_scenario = ('Balanced Bagging' in df_results.Model.unique())
+    scenario = ('Ensemble-Imbalance' if ens_imb_scenario else 'Single-Model')   
+
+    # print(ens_imb_scenario)
+
+    for index, row in df_results.iterrows():
+
+        classifier = row.Classifier
+        hyperparams = row.Hyperparams
+        if ens_imb_scenario:
+            estimator = row.Estimator_Class
+            estimator_hyperparams = row.Estimator_Hyperparams
+        else:
+            estimator = None
+            estimator_hyperparams = None
+
+        model = create_model_from_string(
+            model=classifier,
+            hyperparams=hyperparams,
+            estimator_model=estimator,
+            estimator_hyperparams=estimator_hyperparams
+        )
+
+
+        # add model info to as a dict
+        models.append(
+            {
+            'model_instance': model,
+            'Scenario': scenario,
+            'Model': get_model_short_description(classifier),
+            'Hyperparams': hyperparams,
+            'Estimator': get_model_short_description(estimator),
+            'Estimator_Hyperparams': estimator_hyperparams,  
+            }
+        )
+    
+    #
+    return models
+
+
+
+
 def create_model_from_string(model, hyperparams, estimator_model=None, estimator_hyperparams=None):
 
     if str(hyperparams).strip() == '':
@@ -815,3 +867,43 @@ def create_model_from_string(model, hyperparams, estimator_model=None, estimator
 
     #
     return classifier
+
+
+
+def get_scores_from_predict(y_validation, y_pred=None, fitted_model=None, X_validation=None, print_info=False):
+    # call predict method
+    if fitted_model is not None:
+        y_pred = fitted_model.predict(X_validation)
+    # calculate the scores
+    bal_acc = np.round(balanced_accuracy_score(y_validation, y_pred), 2)
+    sens    = np.round(recall_score(y_validation, y_pred), 2)
+    spec    = np.round(recall_score(y_validation, y_pred, pos_label=0), 2)
+    f1      = np.round(f1_score(y_validation, y_pred), 2)
+    acc     = np.round(accuracy_score(y_validation, y_pred), 2)
+    precision    = np.round(precision_score(y_validation, y_pred), 2)
+    auc     = np.round(roc_auc_score(y_validation, y_pred, multi_class='ovr'), 2)
+
+    if print_info:
+        print(f'BalAcc: {bal_acc:>4.2f}      f1  : {f1:.2f}')
+        print(f'Sens  : {sens:>4.2f}      Acc : {acc:.2f}')
+        print(f'Spec  : {spec:>4.2f}      Prec: {precision:.2f}')
+        print(f'                  AUC : {auc:.2f}')
+
+    #
+    if fitted_model is not None:
+        return bal_acc, sens, spec, auc, acc, precision, f1, y_pred
+    else:
+        return bal_acc, sens, spec, auc, acc, precision, f1
+
+
+
+
+def sort_performances_results(df, cols_order_to_sort=['BalAcc', 'Sens', 'Spec'],
+                      cols_to_return=None):
+
+    df_bests = df.sort_values(cols_order_to_sort, ascending=False).copy()
+
+    if cols_to_return is not None:
+        return df_bests[cols_to_return]
+    else:
+        return df_bests
