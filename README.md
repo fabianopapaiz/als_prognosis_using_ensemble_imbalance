@@ -1,4 +1,4 @@
-# Ensemble-Imbalance-based classification for Amyotrophic Lateral Sclerosis prognostic: identifying short-survival patients at diagnosis
+# Ensemble-Imbalance-based classification for amyotrophic lateral sclerosis prognostic prediction: identifying short-survival patients at diagnosis
 
 
 This code uses ensemble and imbalance learning approaches to improve identifying short-survival amyotrophic lateral sclerosis patients at diagnosis time. Furthermore, we utilized the SHAP framework to explain how the best model performed the patient classifications.  
