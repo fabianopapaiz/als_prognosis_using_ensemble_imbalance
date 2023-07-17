@@ -4,7 +4,9 @@
 This code uses ensemble and imbalance learning approaches to improve identifying short-survival amyotrophic lateral sclerosis patients at diagnosis time. Furthermore, we utilized the SHAP framework to explain how the best model performed the patient classifications.  
 The results of this work have been published in the research article "XXXXXX XXX XXXXX" (Papaiz et al., 2023).
 
+[LICENSE](LICENSE.md)
 
+---
 For those wanting to try it out, this is what you need:
 1) A working version of Python (version 3.9+) and jupyter-notebook.
 2) Install the following Python packages:
@@ -38,7 +40,9 @@ For those wanting to try it out, this is what you need:
            - NOTE: It can take a long time to accomplish (even days) because more than 30,000 models will be executed.
         - Save the performance results into CSV files in the `05_Train_Validate_Models/exec_results` folder
 
+6) Execute the SHAP explanations over the model that reached the best performance for the _Ensemble-Imbalance_ scenario
 
+---
 Finally, please let us know if you have any comments or suggestions, or if you have questions about the code or the procedure (correspondence e-mail: `fabianopapaiz at gmail.com`). 
 
 ** If you use this code for your research please cite this paper: **
