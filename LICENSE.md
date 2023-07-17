@@ -1,4 +1,4 @@
-# Ensemble-Imbalance-based approach to ALS prognosis 
+# Ensemble-Imbalance-based classification for Amyotrophic Lateral Sclerosis prognostic: identifying short-survival patients at diagnosis
 
 #### Copyright (C) 2023  Fabiano Papaiz
 
