@@ -1482,3 +1482,12 @@ def print_array_as_list(arr):
         print(f"    '{e}',")
 
     print(']')
+
+
+def print_array_as_numbered_list(arr):
+    print('[')
+
+    for i, e in enumerate(arr):
+        print(f" {i} '{e}',")
+
+    print(']')
