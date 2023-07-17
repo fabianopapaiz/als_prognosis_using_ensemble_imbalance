@@ -2,7 +2,7 @@
 
 
 This code uses ensemble and imbalance learning approaches to improve identifying short-survival amyotrophic lateral sclerosis patients at diagnosis time. Furthermore, we utilized the SHAP framework to explain how the best model performed the patient classifications.  
-The results of this work have been published in the research article "XXXXXX XXX XXXXX" (Papaiz et al., 2023).
+The results of this work have been published in the research article "Ensemble-Imbalance-based classification for amyotrophic lateral sclerosis prognostic prediction: identifying short-survival patients at diagnosis" (Papaiz et al., 2023).
 
 [LICENSE](LICENSE.md)
 
@@ -47,4 +47,4 @@ Finally, please let us know if you have any comments or suggestions, or if you h
 
 ** If you use this code for your research please cite this paper: **
 
-1) Papaiz et al., 2023 
+1) Papaiz F, Dourado MET, Valentim RAdM, de Morais AHF, Arrais JP. Ensemble-Imbalance-based classification for amyotrophic lateral sclerosis prognostic prediction: identifying short-survival patients at diagnosis. npj Digital Medicine. 2023. 
