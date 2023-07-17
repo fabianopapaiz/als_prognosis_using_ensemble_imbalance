@@ -1,16 +1,30 @@
-# Ensemble-Imbalance-based approach to ALS prognosis
+# Ensemble-Imbalance-based classification for amyotrophic lateral sclerosis prognostic: identifying short-survival patients at diagnosis
 
 
-This code uses convolutional neural networks (with tensorflow) to estimate the parameters of strong gravitational lenses. Unfortunately we're not very good at coding, so you'll find that the code is messy, not well documented, and crazily written. However, that shouldn't discourage you from trying it out. Because it's a pretty pretty cool thing: The code can recover the parameters of gravitational lenses in a fraction of a second. Something that used to take hundreds of hours!
+This code uses ensemble and imbalance learning approaches to improve identifying short-survival amyotrophic lateral sclerosis patients at diagnosis time. Furthermore, we utilized the SHAP framework to explain how the best model performed the patient classifications.  
+The results of this work have been published in the research article "XXXXXX XXX XXXXX" (Papaiz et al., 2023).
 
 
-The results of this work have been published in a Nature letter "Fast Automated Analysis of Strong Gravitational Lenses with Convolutional Neural Networks" (Hezaveh, Perreault Levasseur, Marshall, 2017) and another paper, "Uncertainties in Parameters Estimated with Neural Networks: Application to Strong Gravitational Lensing", submitted to the Astrophysical Journal Letters (Perreault Levasseur, Hezaveh, and Wechsler, 2017). In the next few months we'll be slowly making this code more user-friendly and extend it to more interesting and complex lensing configurations.
+For those wanting to try it out, this is what you need:
+1) A working version of Python (version 3.9+) and jupyter-notebook.
+2) Install the following Python packages:
+    - numpy (1.23.5)
+    - pandas (1.5.3)
+    - matplotlib (3.7.0)
+    - seaborn (0.12.2)
+    - scikit-learn (1.2.1)
+    - imbalanced-learn (0.10.1)
+    - shap (0.41.0) 
+3) Download the patient data analyzed from the Pooled Resource Open-Access ALS Clinical Trials (PRO-ACT) website (https://ncri1.partners.org/ProACT)
+    - Register and log in to the website
+    - Access the `Data` menu and download the `ALL FORMS` dataset
+    - Extract the zipped data file into the `01_raw_data` folder
+    - The `01_raw_data` folder will contain the following CSV files
+      
+      ![raw_data_folder](https://github.com/fabianopapaiz/als_prognosis_using_ensemble_imbalance/assets/16102250/dc9c533d-8152-44f0-b0f4-5b9112f34e04)
 
-
-For those wanting to try it out: The best place to start is the ipython notebook. It's a quick demonstration of lens modeling with neural networks. 
-This is what you need:
-1) A working version of python and tensorflow. This should be easy: a simple installation on your laptop could probabily just be done with pip. (https://www.tensorflow.org/install/)
-2) The data: Unfortunately the files (specially the trained network weights) are too large to be hosted here. So we have put them here: 1-  [trained network weights](https://stanford.box.com/s/7wtkx1fr77156uec8h8apqm9my0aevpi) 2-  [a sample of lensing images to demonstrate the tool](https://stanford.box.com/s/tb2lpk824kee22ah3gz5b50trbp30vyx) 3-  [and a few cosmic ray and artifact maps](https://stanford.box.com/s/hn6l82pkmhm65xsls6g7tcjq63blj8v7)
+      
+5) The data: Unfortunately the files (specially the trained network weights) are too large to be hosted here. So we have put them here: 1-  [trained network weights](https://stanford.box.com/s/7wtkx1fr77156uec8h8apqm9my0aevpi) 2-  [a sample of lensing images to demonstrate the tool](https://stanford.box.com/s/tb2lpk824kee22ah3gz5b50trbp30vyx) 3-  [and a few cosmic ray and artifact maps](https://stanford.box.com/s/hn6l82pkmhm65xsls6g7tcjq63blj8v7)
 
 
 Please download these, untar them (e.g., tar xvfz CosmicRays.tar.gz), and place them inside the "data/" folder. So at the end inside your "data" folder you should have a folder called "CosmicRays", another called "SAURON_TEST", and a third called "trained_weights" (in addition to the two files that are already there). 
