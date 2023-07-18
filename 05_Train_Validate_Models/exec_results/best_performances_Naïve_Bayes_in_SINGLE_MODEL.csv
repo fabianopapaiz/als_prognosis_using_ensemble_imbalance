@@ -9,3 +9,12 @@ Single-Model,All Features,Naïve Bayes,0.81,0.78,0.83,0.54,0.88,0.82,0.41,Comple
 Single-Model,All Features,Naïve Bayes,0.81,0.78,0.83,0.54,0.88,0.82,0.41,ComplementNB,"{'alpha': 4.0, 'norm': False}"
 Single-Model,All Features,Naïve Bayes,0.8,0.77,0.83,0.53,0.88,0.83,0.41,ComplementNB,"{'alpha': 0.1, 'norm': False}"
 Single-Model,All Features,Naïve Bayes,0.78,0.68,0.89,0.56,0.88,0.86,0.48,GaussianNB,{}
+Single-Model,All Features,Naïve Bayes,0.63,0.28,0.98,0.39,0.87,0.89,0.66,ComplementNB,"{'alpha': 0.1, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.63,0.28,0.98,0.39,0.87,0.89,0.66,ComplementNB,"{'alpha': 0.5, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.62,0.26,0.98,0.37,0.87,0.89,0.65,ComplementNB,"{'alpha': 1.0, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.62,0.25,0.98,0.36,0.86,0.89,0.66,ComplementNB,"{'alpha': 1.5, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.61,0.24,0.98,0.35,0.86,0.89,0.69,ComplementNB,"{'alpha': 2.0, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.61,0.23,0.99,0.34,0.86,0.89,0.7,ComplementNB,"{'alpha': 3.0, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.61,0.23,0.98,0.34,0.86,0.89,0.69,ComplementNB,"{'alpha': 2.5, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.6,0.22,0.99,0.33,0.86,0.89,0.7,ComplementNB,"{'alpha': 3.5, 'norm': True}"
+Single-Model,All Features,Naïve Bayes,0.6,0.22,0.99,0.33,0.86,0.89,0.7,ComplementNB,"{'alpha': 4.0, 'norm': True}"

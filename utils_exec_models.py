@@ -28,6 +28,16 @@ import imblearn.combine as reshyb
 from imblearn.ensemble import BalancedBaggingClassifier
 
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm, ListedColormap
+
+import seaborn as sns
+plt.style.use('seaborn-whitegrid')
+
+# import plotly as ply
+# import plotly.express as px
+
+
 
 
 # CONSTANT to store the random_state stated for reproducibility issues
@@ -907,3 +917,136 @@ def sort_performances_results(df, cols_order_to_sort=['BalAcc', 'Sens', 'Spec'],
         return df_bests[cols_to_return]
     else:
         return df_bests
+
+
+def plot_barplot_with_performances_by_model_and_scenario(df, hatched_bars=False, 
+            annotate=False, figsize=[20,20], sort_columns=None, graph_title=None,
+            remove_model_from_y_label=False, col_group_name='Scenario and Model'):
+
+    col_model = 'Model'
+    col_scenario = 'Scenario'
+    col_estimator = 'Estimator'
+    col_bacc = 'Valid_BalAcc'
+    col_sens = 'Valid_Sens'
+    col_spec = 'Valid_Spec'
+#     col_auc  = 'Valid_AUC'
+#     col_acc  = 'Valid_Acc'
+#     col_prec  = 'Valid_Prec'
+#     col_f1   = 'Valid_f1'
+    
+    if not remove_model_from_y_label:
+        col_group = col_group_name
+    else:
+        col_group = 'Scenario'
+    
+    df_aux = df.copy()
+    
+    
+    if sort_columns is None:
+        sort_columns = [col_bacc, col_sens, col_spec]
+    
+    df_aux.sort_values(
+        by=sort_columns, 
+        ascending=False, 
+        inplace=True,
+    )
+   
+    
+    if remove_model_from_y_label:
+        df_aux[col_group] = df_aux[col_model]
+    else:
+        df_aux[col_group] = df_aux[col_model] + ' (' + df_aux[col_estimator].astype(str) + ')'
+    
+    # fix the name of the models of the Single-Model Scenario (remove Estimator info)
+    df_aux[col_group] = df_aux[col_group].str.replace("\(nan\)", '')
+    
+    # df_aux.sort_values(by=[col_group], inplace=True)
+
+    
+    to_plot  =[
+        ['Balanced Acc.', col_bacc],
+        ['Sensitivity', col_sens],
+        ['Specficity', col_spec],
+#         ['AUC', col_auc],
+#         ['f1 Score', col_f1],
+#         ['Accuracy', col_acc],
+#         ['Precision', col_prec],
+    ]
+    
+    concat_dfs = []
+    for desc, col in to_plot:
+        # separate the each performance metric into dataFrames
+        df_temp = df_aux[[col_group, col]].copy()
+        df_temp.rename(columns={col: 'Performance'}, inplace=True)
+        s_max = f' (max: {df_temp.Performance.max()})' if not annotate else ''
+        df_temp['Metric'] = desc
+        concat_dfs.append(df_temp)
+        
+    # concatenate all DFs
+    df_graph = pd.concat(concat_dfs)
+
+
+    # plot the graph
+    plt.figure(figsize=figsize)
+    ax = sns.barplot(
+        data=df_graph, 
+        x='Performance', 
+        y=col_group, 
+        hue='Metric',
+        palette= sns.color_palette("colorblind") if not hatched_bars else None,
+    )
+    
+    
+
+    # if was to plot bar with hash instead of colors
+    if hatched_bars:
+        
+#         hatches = [ "+" , "-", ".", "*","x", "o", "O"] #, "|" , "\\" , "/" ,  ]
+        hatches = [ "|" , "\\" , "/" , "+" , "-", ".", "*","x", "o", "O" ]
+        
+        num_bars = 7
+        i = 0
+        for bar in ax.patches:
+            if (i) % num_bars == 0:
+                i = 0
+            hatch = hatches[i]
+            bar.set_hatch(hatch)
+            bar.set_color('white')
+            bar.set_edgecolor('black')
+            i += 1
+    
+    
+    # annotate the bars with their values
+    if annotate and not hatched_bars:
+        for p in ax.patches:
+            ax.annotate(
+                "%.2f" % p.get_width(), 
+                xy=(
+                    p.get_width()+ 0.015, 
+                    p.get_y()+p.get_height()/2
+                ),
+                xytext=(5, 0), 
+                textcoords='offset points', 
+                ha="left", 
+                va="center",
+                size=10,
+            )    
+
+
+  
+    plt.xlim(0, 1)
+    plt.xticks([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1])
+    # red vertical line to highlight the performance threshold
+    plt.axvline(x=0.8, color='r', ls=':', label='Performance Threshold')
+    
+    #place legend outside top right corner of plot
+    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
+
+    if graph_title is not None:
+        plt.title(graph_title)
+    
+    #
+    plt.show()    
+    plt.close()
+
+    return df_graph
