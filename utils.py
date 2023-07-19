@@ -1491,3 +1491,70 @@ def print_array_as_numbered_list(arr):
         print(f" {i} '{e}',")
 
     print(']')
+
+
+
+
+def plot_series_side_by_side(series1, series2=None, title_list=None, figsize=[15, 3]):
+    
+    values_list = [series1, series2]
+
+    # if informed the 2 series
+    if (series1 is not None) and (series2 is not None):
+        if title_list is None: 
+            title_list = [series1.name, series2.name]
+
+    # if informed only the "series_1"
+    elif (series1 is not None) and (series2 is None):
+        if title_list is None:
+            title_list = [series1.name, None]
+
+    plot_countplot_side_by_side(
+        values_list=values_list, 
+        title_list=title_list,
+        figsize=figsize, 
+    )
+
+
+
+def plot_countplot_side_by_side(values_list, title_list, figsize=[15, 3]):
+
+    qty = len(title_list)
+    i=1
+
+    plt.figure(figsize=figsize)
+    for values, title in zip(values_list, title_list):
+        if values is not None:
+
+            subplot = int(f'1{qty}{i}')
+            plt.subplot(subplot)
+            plt.title(title)
+            g = sns.countplot(
+                x=values,
+                palette= sns.color_palette("colorblind")
+
+            )
+
+            i += 1
+            total = len(values)
+            # annotate the bars with their values
+            for p in g.axes.patches:
+                percentage = (100 * p.get_height()/total)
+
+                g.annotate(
+                    f'{p.get_height():.0f}\n{percentage:.1f}%', 
+                    xy=(
+                        (p.get_x()+p.get_width()/2),
+                         50 #p.get_height() * 0.1
+                    ),
+                    # xytext=(0, 2), 
+                    textcoords='offset points', 
+                    ha="center", 
+                    va="center",
+                    size=12,
+                )    
+
+
+    plt.show()
+    plt.close()
+
