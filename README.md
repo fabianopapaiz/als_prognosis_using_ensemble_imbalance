@@ -40,7 +40,17 @@ For those wanting to try it out, this is what you need:
            - NOTE: It can take a long time to accomplish (even days) because more than 30,000 models will be executed.
         - Save the performance results into CSV files in the `05_Train_Validate_Models/exec_results` folder
 
-6) Execute the SHAP explanations over the model that reached the best performance for the _Ensemble-Imbalance_ scenario
+6) Execute the SHAP explanations over the model that reached the best performance for the _Ensemble-Imbalance_ scenario(i.e., _BalancedBagging_ model using _Neural Networks_ as a base estimator)
+    - Create a SHAP Kernel Explainer instance using the best model and the Validation set:
+        - ```explainer = shap.KernelExplainer(<<BEST_MODEL>>.predict, X_valid) ```
+    - Generate the SHAP values: (Note: It can take many hours)
+        - ```shap_values = explainer.shap_values(X_valid)```
+    - Analyze the SHAP results by plotting SHAP graphs. See the examples below:
+        - Decision plot:
+          ![decision](https://github.com/fabianopapaiz/als_prognosis_using_ensemble_imbalance/assets/16102250/20e96b52-d954-49ee-acec-4d87994a6fea)
+        - Summary plot: (Bar and Dotted plots)
+          ![summary](https://github.com/fabianopapaiz/als_prognosis_using_ensemble_imbalance/assets/16102250/655212cd-23d0-464d-bc72-d4e4c1484120)
+
 
 ---
 Finally, please let us know if you have any comments or suggestions, or if you have questions about the code or the procedure (correspondence e-mail: `fabianopapaiz at gmail.com`). 
