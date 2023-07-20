@@ -1558,3 +1558,26 @@ def plot_countplot_side_by_side(values_list, title_list, figsize=[15, 3]):
     plt.show()
     plt.close()
 
+
+
+def save_plot(plt, folder, file_name, dpi=300, bbox_inches='tight', save_in_pdf_format=False, save_in_eps_format=False):
+
+    plt.savefig(
+        f'{folder}/{file_name}.png', 
+        bbox_inches=bbox_inches, 
+        dpi=dpi
+    )
+
+    if save_in_pdf_format:
+        plt.savefig(
+            f'{folder}/{file_name}.pdf', 
+            bbox_inches=bbox_inches, 
+            dpi=dpi
+        )
+
+    if save_in_eps_format:
+        plt.savefig(
+            f'{folder}/{file_name}.eps', 
+            bbox_inches=bbox_inches, 
+            dpi=dpi
+        )
