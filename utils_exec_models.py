@@ -147,18 +147,69 @@ def get_default_scoring():
         'sensitivity': make_scorer(recall_score),
         'specificity': make_scorer(recall_score, pos_label=0),
         'f1': make_scorer(f1_score),
+        #
         'AUC': 'roc_auc', #make_scorer(roc_auc_score, multi_class='ovr'),
-        'accuracy': make_scorer(accuracy_score),
-        'precision': make_scorer(precision_score, zero_division=0),
+        'accuracy': make_scorer(
+            roc_auc_score, 
+            needs_proba=True, 
+            multi_class="ovr", 
+            # needs_threshold=True
+        ),
+        'precision': make_scorer(
+            roc_auc_score, 
+            # needs_proba=True, 
+            multi_class="ovr", 
+            needs_threshold=True
+        ),
+        #
+        # 'accuracy': make_scorer(accuracy_score),
+        # 'precision': make_scorer(precision_score, zero_division=0),
     }
     return scoring
+
+
+def create_models_SVM_grid(param_grid=None, testing=False):
+    # hyperparams
+    kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
+    gammas = ['scale', 'auto',]
+    
+    # class_weights = [None, 'balanced',]
+    class_weights = ['balanced',]
+
+    Cs = [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10] #, 100, 200, 1000, 1500, 1700, 2000]
+
+    if testing:
+        kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
+        gammas = ['auto',]
+        class_weights = ['balanced']
+        Cs = [0.1, 0.3, ]
+
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "classifier__C": Cs,
+            "classifier__kernel": kernels,
+            "classifier__gamma": gammas,
+            "classifier__class_weight": class_weights,
+            "classifier__probability": [True],
+            "classifier__random_state": [RANDOM_STATE],
+            "classifier": [svm.SVC()]
+        }
+    )    
+
+    return param_grid
+
 
 
 def exec_grid_search(param_grid, X, y, cv=None, 
                      n_jobs=N_JOBS, verbose=1, scoring=None, 
                      refit=None, return_train_score=False,
                      sort_results=True, dataset_info='', 
-                     features_info=''):
+                     features_info='', 
+                     X_valid=None, y_valid=None, plot_roc_curve=False):
 
     pipeline = Pipeline(steps=[('classifier', GaussianNB() )])
 
@@ -194,6 +245,33 @@ def exec_grid_search(param_grid, X, y, cv=None,
         features_info=features_info,
         sort_results=sort_results,
     )
+
+
+    if plot_roc_curve and X_valid is not None:
+        clf = grid.best_estimator_    
+        display = sk.metrics.RocCurveDisplay.from_estimator(
+            estimator=clf, 
+            X=X_valid, 
+            y=y_valid,
+            response_method='predict_proba',
+        )
+        plt.show()
+
+        # sk.metrics.plot_roc_curve(clf, X_valid, y_valid)
+        # plt.show()
+
+        # pred = clf.predict_proba(X_valid)
+
+        # print(pred)
+        # print(y_valid)
+
+        # print('DSDSF SF')
+
+        # fpr, tpr, thresholds =sk.metrics.roc_curve(y_valid, pred)
+        # roc_auc = sk.metrics.auc(fpr, tpr)
+        # display = sk.metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name=str(clf).split('(')[0])
+        # display.plot()
+
 
     return grid, df_results
 
@@ -232,9 +310,10 @@ def create_models_NB_grid(param_grid=None, testing=False):
 
 def create_models_DT_grid(param_grid=None, testing=False):
     # hyperparams
-    max_depths = [3, 4, 5, 7, 9, 10, 15, 25, 50]
+    max_depths = [3, 4, 5, 7, 9, 10, 15, 25] #, 50]
     criterions = ['gini', 'entropy'] #, 'log_loss'] LOG-LOSS DOESN'T WORK
     class_weights = [None, 'balanced']
+    class_weights = ['balanced']
 
 
     if testing:
@@ -393,38 +472,6 @@ def create_models_kNN_grid(param_grid=None, testing=False):
         }
     )    
 
-
-    return param_grid
-
-
-def create_models_SVM_grid(param_grid=None, testing=False):
-    # hyperparams
-    kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
-    gammas = ['scale', 'auto',]
-    class_weights = [None, 'balanced',]
-    Cs = [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10, 100, 200, 1000, 1500, 1700, 2000]
-
-    if testing:
-        kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
-        gammas = ['auto',]
-        class_weights = [None]
-        Cs = [0.1, 0.3, ]
-
-
-    if param_grid is None:
-        param_grid = []
-
-    param_grid.append(
-        {
-            "classifier__C": Cs,
-            "classifier__kernel": kernels,
-            "classifier__gamma": gammas,
-            "classifier__class_weight": class_weights,
-            "classifier__probability": [True],
-            "classifier__random_state": [RANDOM_STATE],
-            "classifier": [svm.SVC()]
-        }
-    )    
 
     return param_grid
 

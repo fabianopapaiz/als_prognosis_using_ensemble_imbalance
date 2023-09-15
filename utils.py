@@ -67,7 +67,7 @@ def get_inputs_and_output_variables(df):
     return X, y
 
 
-def get_train_and_validation_data(dir_data=None, scaled=False, coded=False):
+def get_train_and_validation_data(dir_data=None, scaled=False, coded=False, use_diagnosis_delay=True):
 
     if dir_data is None:
         dir_data = os.path.abspath('training_validation_data/')
@@ -86,6 +86,12 @@ def get_train_and_validation_data(dir_data=None, scaled=False, coded=False):
     # Validation set
     df_validation = read_csv(f'{dir_data}/validation_data{suffix}.csv')
     X_valid, y_valid = get_inputs_and_output_variables(df_validation)
+
+
+    # drop Diagnosis_Delay column, if needed
+    if not use_diagnosis_delay:
+        X_train.drop(columns=['Diagnosis_Delay'], inplace=True)
+        X_valid.drop(columns=['Diagnosis_Delay'], inplace=True)
 
 
     # X_all = pd.concat([X_train, X_valid])
