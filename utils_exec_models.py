@@ -65,6 +65,7 @@ def get_grid_search_performances(grid_search=None, performances=None,
             dataset_info='', features_info='',
             sort_results=True):
 
+
     models_results = [] 
     
     if grid_search is not None:
@@ -73,6 +74,7 @@ def get_grid_search_performances(grid_search=None, performances=None,
         # get the models and hyperparameters
         models = []
         hyperparams = []
+        clf = None
         for classif_dict in classifiers:
             dict_params = {}
             for key, value in classif_dict.items():
@@ -82,6 +84,9 @@ def get_grid_search_performances(grid_search=None, performances=None,
                     # correct the param name
                     new_key = key.replace('classifier__', '')
                     dict_params[new_key] = value    
+
+            if clf is None:
+                clf = grid_search.estimator
 
             model = clf.__class__.__name__
             params = str(dict_params)
@@ -169,7 +174,7 @@ def exec_grid_search(param_grid, X, y, cv=None,
                      features_info='', 
                      X_valid=None, y_valid=None, plot_roc_curve=False):
 
-    pipeline = Pipeline(steps=[('classifier', GaussianNB() )])
+    # pipeline = Pipeline(steps=[('classifier', GaussianNB() )])
 
     if type(y) is pd.DataFrame:
         y = y[utils.CLASS_COLUMN].ravel()  
@@ -184,8 +189,14 @@ def exec_grid_search(param_grid, X, y, cv=None,
     if cv is None:
         cv = get_kfold_splits()
 
+    # get the estimator object (e.g., svm.SVC(), DecisionTreeClassifier()...)
+    estimator = param_grid[0]['classifier'][0]
+    # remove the estimator key from the grid_params dict
+    param_grid[0].pop('classifier')
+
+
     grid = GridSearchCV(
-        estimator=pipeline,
+        estimator=estimator, # pipeline,
         param_grid=param_grid, 
         scoring=scoring,
         cv=cv, 
@@ -211,15 +222,14 @@ def exec_grid_search(param_grid, X, y, cv=None,
     y_pred_proba = None
 
     if plot_roc_curve:
-        # get best estimator from grid
-        clf = grid.best_estimator_  
+        # get the best classifier
+        clf = grid.best_estimator_    
 
         # fit using all training set
         clf.fit(X, y)
 
-        # extract classifier name, hyperparams and model friendly name
-        str_replace = "Pipeline(steps=[('classifier',"
-        clf_instance = str(clf).replace(str_replace, '').replace('\n', '').replace(')])','').replace(' ','').strip()
+        # extract classifier name, hyperparams and a model "friendly name"
+        clf_instance = str(clf).replace('\n', '').replace(' ','').strip()
         estimator_name = clf_instance.split('(')[0]
         hyperparams = clf_instance.split('(')[1][:-1]
         model_desc = get_model_description(estimator_name)
@@ -302,13 +312,10 @@ def get_default_scoring():
         'balanced_accuracy': make_scorer(balanced_accuracy_score),
         'sensitivity': make_scorer(recall_score),
         'specificity': make_scorer(recall_score, pos_label=0),
-        'f1': make_scorer(f1_score),
+        'f1': make_scorer(f1_score, zero_division=0.0),
         #
-        'AUC': 'roc_auc', #make_scorer(roc_auc_score, multi_class='ovr'),
-        'accuracy': make_scorer(roc_auc_score),
-
-        #
-        # 'accuracy': make_scorer(accuracy_score),
+        'AUC': make_scorer(roc_auc_score),
+        'accuracy': make_scorer(accuracy_score),
         'precision': make_scorer(precision_score, zero_division=0),
     }
     return scoring
@@ -352,7 +359,7 @@ def create_models_SVM_grid(param_grid=None, testing=False):
 
 
 
-def create_models_NB_grid(param_grid=None, testing=False):
+def create_models_NB_grid(param_grid=None, testing=False, only_ComplementNB=False, only_GaussianNB=False):
     # hyperparams
     alphas = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
     norms = [False, True]
@@ -365,21 +372,82 @@ def create_models_NB_grid(param_grid=None, testing=False):
     if param_grid is None:
         param_grid = []
 
-    param_grid.append(
-        {
-            "classifier__alpha": alphas,
-            "classifier__norm": norms,
-            "classifier": [ComplementNB()]
-        }
-    )    
+    if not only_GaussianNB:
+        param_grid.append(
+            {
+                "classifier__alpha": alphas,
+                "classifier__norm": norms,
+                "classifier": [ComplementNB()]
+            }
+        )    
 
-    param_grid.append(
-        {
-            "classifier": [GaussianNB()]
-        }
-    )    
+    if not only_ComplementNB:
+        param_grid.append(
+            {
+                "classifier": [GaussianNB()]
+            }
+        )    
 
     return param_grid
+
+
+
+def set_grid_params_alone(param_grid):
+    keys = list(param_grid[0].keys())
+    for key in keys:
+        if key.startswith('classifier__'): 
+            new_key = key.replace('classifier__', '')
+            param_grid[0][new_key] = param_grid[0][key]
+            param_grid[0].pop(key)
+
+
+
+#     utils_exec_models.create_models_NN_grid(qty_features=X_train.shape[1], testing=TESTING),
+
+def create_models_NN_grid_alone(qty_features, testing=False):
+    param_grid = create_models_NN_grid(qty_features=qty_features, testing=testing)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+
+def create_models_GaussianNB_grid_alone(testing=False):
+    param_grid = create_models_NB_grid(testing=testing, only_GaussianNB=True)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+def create_models_ComplementNB_grid_alone(testing=False):
+    param_grid = create_models_NB_grid(testing=testing, only_ComplementNB=True)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+def create_models_RF_grid_alone(testing=False):
+    param_grid = create_models_RF_grid(testing=testing)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+
+def create_models_kNN_grid_alone(testing=False):
+    param_grid = create_models_kNN_grid(testing=testing, only_kNN=True)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+def create_models_Radius_kNN_grid_alone(testing=False):
+    param_grid = create_models_kNN_grid(testing=testing, only_Radius=True)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+
+def create_models_SVM_grid_alone(testing=False):
+    param_grid = create_models_SVM_grid(testing=testing)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
+
+def create_models_DT_grid_alone(testing=False):
+    param_grid = create_models_DT_grid(testing=testing)    
+    set_grid_params_alone(param_grid)
+    return param_grid
+
 
 
 
@@ -496,7 +564,9 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
 
 
 
-def create_models_kNN_grid(param_grid=None, testing=False):
+
+
+def create_models_kNN_grid(param_grid=None, testing=False, only_kNN=False, only_Radius=False):
     # hyperparams
     weights = ['uniform', 'distance']
     distance_metrics = [
@@ -526,27 +596,29 @@ def create_models_kNN_grid(param_grid=None, testing=False):
     if param_grid is None:
         param_grid = []
 
-    # k-NN
-    param_grid.append(
-        {
-            "classifier__n_neighbors": ks,
-            "classifier__weights": weights,
-            "classifier__metric": distance_metrics,
-            "classifier": [KNeighborsClassifier()]
-        }
-    )    
+    if not only_Radius:
+        # k-NN
+        param_grid.append(
+            {
+                "classifier__n_neighbors": ks,
+                "classifier__weights": weights,
+                "classifier__metric": distance_metrics,
+                "classifier": [KNeighborsClassifier()]
+            }
+        )    
 
-    # Radius-NN
-    param_grid.append(
-        {
-            "classifier__radius": radius_set,
-            "classifier__weights": weights,
-            "classifier__leaf_size": leaf_sizes,
-            "classifier__outlier_label": outlier_labels,
-            "classifier__metric": distance_metrics,
-            "classifier": [RadiusNeighborsClassifier()]
-        }
-    )    
+    if not only_kNN:
+        # Radius-NN
+        param_grid.append(
+            {
+                "classifier__radius": radius_set,
+                "classifier__weights": weights,
+                "classifier__leaf_size": leaf_sizes,
+                "classifier__outlier_label": outlier_labels,
+                "classifier__metric": distance_metrics,
+                "classifier": [RadiusNeighborsClassifier()]
+            }
+        )    
 
 
     return param_grid
