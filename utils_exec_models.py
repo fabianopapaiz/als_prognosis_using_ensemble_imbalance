@@ -207,120 +207,36 @@ def exec_grid_search(param_grid, X, y, cv=None,
 
     det_curve_data = []
     precision_recall_curve_data = []
+    y_pred = None
+    y_pred_proba = None
 
     if plot_roc_curve:
+        # get best estimator from grid
         clf = grid.best_estimator_  
-        # print(clf)
 
+        # fit using all training set
         clf.fit(X, y)
 
+        # extract classifier name, hyperparams and model friendly name
         str_replace = "Pipeline(steps=[('classifier',"
         clf_instance = str(clf).replace(str_replace, '').replace('\n', '').replace(')])','').replace(' ','').strip()
-        # print(clf_instance)
         estimator_name = clf_instance.split('(')[0]
         hyperparams = clf_instance.split('(')[1][:-1]
+        model_desc = get_model_description(estimator_name)
 
-        # the first column represents the probability of the negative class (class 0) and the second column represents the probability of the positive class (class 1).
-        y_pred_proba = clf.predict_proba(X_valid)
-        y_pred_proba = y_pred_proba[:,1] #short-survival
-
-
-
-        precision, recall, _ = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
-        print(f'AUC Precision-Recall: {sk.metrics.auc(recall, precision)}')
-        # optimal_proba_cutoff = list(zip(precision, recall))
-        # print('-2', optimal_proba_cutoff)
-
-        # optimal_proba_cutoff = np.abs(precision - recall)
-        # print('-1', optimal_proba_cutoff)
-
-        # optimal_proba_cutoff = list(zip(np.abs(precision - recall), y_pred_proba))
-        # print('0', optimal_proba_cutoff)
-
-        # optimal_proba_cutoff = sorted(list(zip(np.abs(precision - recall), y_pred_proba)), key=lambda i: i[0], reverse=False)
-        # print('1', optimal_proba_cutoff)
-        # print('2', optimal_proba_cutoff[0])
-        
-        fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
-        # disp = sk.metrics.DetCurveDisplay(
-        #     fpr=fpr, 
-        #     fnr=fnr, 
-        #     estimator_name=estimator_name,
-        # )
-        # disp.plot()
-        # plt.plot()
-
-        det_curve_data = [estimator_name, fpr, fnr, thresholds]
-        
-
-        precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
-        disp = sk.metrics.PrecisionRecallDisplay(precision=precision, recall=recall)
-        disp.plot()
-        plt.show()
-
-        precision_recall_curve_data = [estimator_name, precision, recall, thresholds]
-
-
-        prc_display = sk.metrics.PrecisionRecallDisplay.from_predictions(
-            y_valid, 
-            y_pred_proba,
-            name=estimator_name,
-            plot_chance_level=True,
-            # drop_intermediate=True,
-        )
-
-        gmeans = np.sqrt(recall * precision)
-        ix = np.argmax(gmeans)
-        plt.plot(recall[ix], precision[ix], 'o', ms=5, c='red')
-        print('gmeans', recall[ix], precision[ix])
-
-        euclidean_dist = np.sqrt(np.power((1-recall),2) + np.power((1-precision), 2))
-        euclidean_dist = sk.metrics.pairwise.euclidean_distances(np.column_stack((recall,precision)), [[1., 1.]])
-        ix = np.argmin(euclidean_dist)
-        plt.plot(recall[ix], precision[ix], 'o', ms=5, c='blue')
-        print('euclid', recall[ix], precision[ix])
-
-
-        # print(optimal_proba_cutoff[1], optimal_proba_cutoff[0])
-        # plt.plot(optimal_proba_cutoff[0], optimal_proba_cutoff[1], 'ko', ms=5)
-        plt.show()
-
-
-        fpr, tpr, thresholds = sk.metrics.roc_curve(y_valid, y_pred_proba)
-        roc_auc = sk.metrics.auc(fpr, tpr)
-        print(f'AUC ROC: {roc_auc}')
-        roc_display = sk.metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name=estimator_name)
-        roc_display.plot()
-
-        roc_curve_data = [estimator_name, fpr, tpr, thresholds]
-
-
-
-        gmeans = np.sqrt(tpr * (1-fpr))
-        ix = np.argmax(gmeans)
-        # print('Best Threshold=%f, G-Mean=%.3f' % (thresholds[ix], gmeans[ix]))
-        # print(fpr[ix], tpr[ix])
-        plt.plot(fpr[ix], tpr[ix], 'ko', ms=5)
-        print('gmeans', tpr[ix], fpr[ix])
-
-        euclidean_dist = np.sqrt(np.power((1-tpr),2) + np.power((0-fpr), 2))
-        euclidean_dist = sk.metrics.pairwise.euclidean_distances(np.column_stack((tpr,fpr)), [[1., 0.]])
-        ix = np.argmin(euclidean_dist)
-        plt.plot(fpr[ix], tpr[ix], 'o', ms=5, c='blue')
-        print('gmeans', tpr[ix], fpr[ix])
-
-        plt.show()
-
-
-
+        # make predictions using the best classifier
         y_pred = clf.predict(X_valid)
 
-        # # confusion matrix
-        # cm = confusion_matrix(y_valid, y_pred, labels=clf.classes_)
-        # disp = sk.metrics.ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=clf.classes_)
-        # disp.plot()
-        # plt.show()
+        # make predictions using probabilities, returning the class 
+        # probabilities for sample.
+        # The first column represents the probability of the 
+        # negative class (Non-Short) and the second column represents 
+        # the probability of the positive class (Short).
+        y_pred_proba = clf.predict_proba(X_valid)
+        y_pred_proba = y_pred_proba[:,1] # get short-survival probabilities
 
+
+        # get performance metrics based on predict and predict_proba
         bal_acc, sens, spec, auc, acc, precision, f1 = get_scores_from_predict(
             y_validation=y_valid,
             y_pred=y_pred,
@@ -328,27 +244,55 @@ def exec_grid_search(param_grid, X, y, cv=None,
             print_info=False,
         )
 
-        model_desc = get_model_description(estimator_name)
-
+        # get performances from the best classifier of the grid serach
         df_results = get_grid_search_performances(
             # grid_search=grid,
-
             performances=[model_desc, estimator_name, hyperparams, bal_acc, sens, spec, auc, acc, precision, f1],
             dataset_info=dataset_info,
             features_info=features_info,
             sort_results=sort_results,
         )
-        # # 'balanced_accuracy': make_scorer(balanced_accuracy_score),
-        # print("BallAcc: {}".format(balanced_accuracy_score(y_valid, y_pred)))
-        # print("Sens: {}".format(recall_score(y_valid, y_pred)))
-        # print("Spec: {}".format(recall_score(y_valid, y_pred, pos_label=0)))
-        # print("f1: {}".format(f1_score(y_valid, y_pred)))
-        # print("Acc: {}".format(accuracy_score(y_valid, y_pred)))
-        # print("Prec: {}".format(precision_score(y_valid, y_pred)))
-        # print("AUC: {}".format(roc_auc_score(y_valid, y_pred_proba)))
 
 
-    return grid, df_results, det_curve_data, precision_recall_curve_data, roc_curve_data
+
+        # =======================================================
+        # Detection Error Tradeoff (DET) curve
+        # =======================================================
+        fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
+        det_curve_data = [estimator_name, fpr, fnr, thresholds]
+        
+
+        # =======================================================
+        # Precision-Recall curve
+        # =======================================================
+        precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
+        au_prec_recall_curve = sk.metrics.auc(recall, precision)
+        precision_recall_curve_data = [estimator_name, precision, recall, thresholds]
+
+
+        # =======================================================
+        # ROC curve
+        # =======================================================
+        fpr, tpr, thresholds = sk.metrics.roc_curve(y_valid, y_pred_proba)
+        roc_auc = sk.metrics.auc(fpr, tpr)
+        roc_curve_data = [estimator_name, fpr, tpr, thresholds]
+
+
+        # =======================================================
+        # Predictions data (using predict and predict_proba)
+        # =======================================================
+        predictions_data = [estimator_name, y_pred, y_pred_proba]
+
+
+        # print some info
+        print(f'Classifier: {estimator_name}')
+        print(f'  Area under ROC: {roc_auc:.2f}; Area under Prec-Recall curve: {au_prec_recall_curve:.2f}')
+        print()
+
+
+
+    # return all information
+    return grid, df_results, det_curve_data, precision_recall_curve_data, roc_curve_data, predictions_data
 
 
 DEFAULT_SCORE = 'balanced_accuracy'
