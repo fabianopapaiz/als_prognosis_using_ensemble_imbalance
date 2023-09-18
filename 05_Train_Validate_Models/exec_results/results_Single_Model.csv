@@ -1,3 +1,7 @@
 Dataset,Features,Model,BalAcc,Sens,Spec,f1,AUC,Acc,Prec,Classifier,Hyperparams
 Single-Model,All Features,SVM,0.82,0.85,0.78,0.49,0.89,0.79,0.35,SVC,"C=0.3,class_weight='balanced',gamma='auto',probability=True,random_state=42"
+Single-Model,All Features,Random Forest,0.78,0.74,0.81,0.47,0.88,0.8,0.34,RandomForestClassifier,"class_weight='balanced',max_depth=5,n_estimators=50,random_state=42"
+Single-Model,All Features,Decision Tree,0.77,0.81,0.72,0.42,0.82,0.73,0.28,DecisionTreeClassifier,"class_weight='balanced',max_depth=5,random_state=42"
 Single-Model,All Features,Naïve Bayes,0.77,0.7,0.84,0.49,0.88,0.82,0.37,GaussianNB,
+Single-Model,All Features,Neural Networks,0.72,0.51,0.93,0.49,0.87,0.88,0.48,MLPClassifier,"alpha=0.1,hidden_layer_sizes=22,learning_rate_init=0.7,max_iter=300,random_state=42,solver='sgd'"
+Single-Model,All Features,k-NN,0.63,0.3,0.97,0.39,0.78,0.89,0.56,KNeighborsClassifier,"metric='manhattan',weights='distance'"

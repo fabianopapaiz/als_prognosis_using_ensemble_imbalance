@@ -205,6 +205,9 @@ def exec_grid_search(param_grid, X, y, cv=None,
     )
 
 
+    det_curve_data = []
+    precision_recall_curve_data = []
+
     if plot_roc_curve:
         clf = grid.best_estimator_  
         # print(clf)
@@ -238,6 +241,26 @@ def exec_grid_search(param_grid, X, y, cv=None,
         # print('1', optimal_proba_cutoff)
         # print('2', optimal_proba_cutoff[0])
         
+        fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
+        # disp = sk.metrics.DetCurveDisplay(
+        #     fpr=fpr, 
+        #     fnr=fnr, 
+        #     estimator_name=estimator_name,
+        # )
+        # disp.plot()
+        # plt.plot()
+
+        det_curve_data = [estimator_name, fpr, fnr, thresholds]
+        
+
+        precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
+        disp = sk.metrics.PrecisionRecallDisplay(precision=precision, recall=recall)
+        disp.plot()
+        plt.show()
+
+        precision_recall_curve_data = [estimator_name, precision, recall, thresholds]
+
+
         prc_display = sk.metrics.PrecisionRecallDisplay.from_predictions(
             y_valid, 
             y_pred_proba,
@@ -268,6 +291,9 @@ def exec_grid_search(param_grid, X, y, cv=None,
         print(f'AUC ROC: {roc_auc}')
         roc_display = sk.metrics.RocCurveDisplay(fpr=fpr, tpr=tpr, roc_auc=roc_auc, estimator_name=estimator_name)
         roc_display.plot()
+
+        roc_curve_data = [estimator_name, fpr, tpr, thresholds]
+
 
 
         gmeans = np.sqrt(tpr * (1-fpr))
@@ -322,7 +348,7 @@ def exec_grid_search(param_grid, X, y, cv=None,
         # print("AUC: {}".format(roc_auc_score(y_valid, y_pred_proba)))
 
 
-    return grid, df_results
+    return grid, df_results, det_curve_data, precision_recall_curve_data, roc_curve_data
 
 
 DEFAULT_SCORE = 'balanced_accuracy'
