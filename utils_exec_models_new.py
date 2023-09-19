@@ -48,6 +48,14 @@ N_JOBS = 7
 CV_N_SPLITS = 5
 
 
+def sort_performances_results(df, cols_order_to_sort=['BalAcc', 'Sens', 'Spec'], cols_to_return=None):
+    df_bests = df.sort_values(cols_order_to_sort, ascending=False).copy()
+    if cols_to_return is not None:
+        return df_bests[cols_to_return]
+    else:
+        return df_bests
+
+
 def get_kfold_splits(n_splits=CV_N_SPLITS, random_state=RANDOM_STATE, shuffle_kfold=True, ):
     kfold = StratifiedKFold(
         n_splits=n_splits, 
@@ -65,7 +73,7 @@ def get_default_scoring():
         'sensitivity': make_scorer(recall_score),
         'specificity': make_scorer(recall_score, pos_label=0),
         'f1': make_scorer(f1_score, zero_division=0.0),
-        'AUC': make_scorer(roc_auc_score),
+        'auc': 'roc_auc', #make_scorer(roc_auc_score),
         'accuracy': make_scorer(accuracy_score),
         'precision': make_scorer(precision_score, zero_division=0),
     }
@@ -220,7 +228,7 @@ def create_models_SVM_grid(param_grid=None, testing=False):
 
     if testing:
         kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
-        gammas = ['auto',]
+        # gammas = ['auto',]
         class_weights = ['balanced']
         Cs = [0.1, 0.3, ]
 
@@ -244,6 +252,50 @@ def create_models_SVM_grid(param_grid=None, testing=False):
     return classifier, param_grid
 
 
+PERFORMANCE_THRESHOLD = 0.75 #(80%)
+PERFORMANCE_COLUMN    ='balanced_accuracy'
+
+def get_grid_search_performances(grid, classifier, performance_threshold=PERFORMANCE_THRESHOLD, 
+                                 performance_column=PERFORMANCE_COLUMN, sort_results=True):
+
+    df_results = pd.DataFrame(grid.cv_results_)
+
+    df_results['Classifier'] = get_classifier_class_name(classifier)
+
+    # reduce the name of the columns by removing the initial string "mean_test_"
+    for col in df_results.columns:
+        if col.startswith('mean_test_'):
+            col_new = col.replace('mean_test_', '')
+            df_results.rename(
+                columns={col: col_new}, 
+                inplace=True,
+            )
+
+
+    # remove performances lower than "performance_threshold" (default: 0.75)
+    df_results = df_results.loc[(df_results[performance_column] >= performance_threshold)].copy()
+
+    # get only the columns of interest        
+    cols_of_interest = [
+        'classifier',
+        'balanced_accuracy',
+        'sensitivity',
+        'specificity',
+        'auc',
+        'accuracy',
+        'precision',
+        'f1',
+        'params',
+    ]
+    df_results = df_results[cols_of_interest]
+
+    # rouind the values using 2 decimal places
+    df_results = df_results.round(2)        
+    
+    return df_results
+
+
+
 
 
 DEFAULT_SCORE = 'balanced_accuracy'
@@ -253,7 +305,10 @@ def exec_grid_search(classifier, param_grid, X, y, cv=None,
                      refit=None, return_train_score=False,
                      sort_results=True, dataset_info='', 
                      features_info='', 
-                     X_valid=None, y_valid=None, plot_roc_curve=False):
+                     X_valid=None, y_valid=None, plot_roc_curve=False,
+                     performance_threshold=PERFORMANCE_THRESHOLD,
+                     performance_column=PERFORMANCE_COLUMN,
+                     ):
 
 
     # get only array of output y, if it was a dataFrame
@@ -288,15 +343,18 @@ def exec_grid_search(classifier, param_grid, X, y, cv=None,
     # train the gridSearch models
     grid.fit(X, y)    
 
-    return grid
 
+    # get performance for each set of hyperparams
+    # filtering by perfromance_threshold
+    df_results = get_grid_search_performances(
+        classifier=classifier,
+        grid_search=grid,
+        sort_results=sort_results,
+        performance_threshold=performance_threshold,
+        performance_column=performance_column
+    )
 
-    # df_results = get_grid_search_performances(
-    #     grid_search=grid,
-    #     dataset_info=dataset_info,
-    #     features_info=features_info,
-    #     sort_results=sort_results,
-    # )
+    # filter
 
 
     # det_curve_data = []

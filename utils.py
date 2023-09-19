@@ -67,6 +67,11 @@ def get_inputs_and_output_variables(df):
     return X, y
 
 
+# get "n" first colors for a given palette
+def get_n_colors(n, palette='colorblind'):
+    return sns.color_palette(palette, n)
+
+
 def get_train_and_validation_data(dir_data=None, scaled=False, coded=False, use_diagnosis_delay=True):
 
     if dir_data is None:
