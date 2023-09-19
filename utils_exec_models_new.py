@@ -189,8 +189,8 @@ def create_models_RF_grid(param_grid=None, testing=False):
     max_depths = [5, 7, 10, 15] #, 25, 50]
     num_estimators = [11, 15, 21, 51] #, 75, 100, 200] 
     criterions = ['gini', 'entropy'] 
-    # class_weights = [None, 'balanced', 'balanced_subsample']
-    class_weights = ['balanced']
+    class_weights = [None, 'balanced', 'balanced_subsample']
+    # class_weights = ['balanced']
 
 
     if testing:
@@ -223,7 +223,6 @@ def create_models_DT_grid(param_grid=None, testing=False):
     max_depths = [3, 4, 5, 7, 9, 10, 15, 25] #, 50]
     criterions = ['gini', 'entropy'] #, 'log_loss'] LOG-LOSS DOESN'T WORK
     class_weights = [None, 'balanced']
-    class_weights = ['balanced']
 
 
     if testing:
@@ -249,14 +248,16 @@ def create_models_DT_grid(param_grid=None, testing=False):
     return classifier, param_grid
 
 
-def create_models_ComplementNB_grid(param_grid=None, testing=False):
+def create_models_NB_Complement_grid(param_grid=None, testing=False):
     # hyperparams
-    alphas = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    alphas = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 7.0, 8.0, 9.0, 10.0, 15.0]
     norms = [False, True]
+    force_alphas = [False, True]
 
     if testing:
         alphas = [0.1, 0.5]
         norms = [False]
+        force_alphas = [False]
 
 
     if param_grid is None:
@@ -266,6 +267,7 @@ def create_models_ComplementNB_grid(param_grid=None, testing=False):
         {
             "alpha": alphas,
             "norm": norms,
+            "force_alpha": force_alphas,
         }
     )    
 
@@ -320,7 +322,7 @@ def create_models_RadiusNN_grid(param_grid=None, testing=False):
 
     #radius
     radius_set = [0.3, 0.5, 0.7, 1.0] 
-    leaf_sizes = [50, 100, 200] 
+    leaf_sizes = [50, 100, 200, 300, 500] 
     outlier_labels = [0, 1]
 
     if testing:
@@ -354,7 +356,7 @@ def create_models_RadiusNN_grid(param_grid=None, testing=False):
     return classifier, param_grid
 
 
-def create_models_GaussianNB_grid(param_grid=None, testing=False):
+def create_models_NB_Gaussian_grid(param_grid=None, testing=False):
 
     param_grid = [{}]    
 
@@ -420,8 +422,8 @@ def create_models_SVM_grid(param_grid=None, testing=False):
     kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
     gammas = ['scale', 'auto',]
     
-    # class_weights = [None, 'balanced',]
-    class_weights = ['balanced',]
+    class_weights = [None, 'balanced',]
+    # class_weights = ['balanced',]
 
     Cs = [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10] #, 100, 200, 1000, 1500, 1700, 2000]
 

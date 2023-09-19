@@ -1,0 +1,6 @@
+Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
+Naïve Bayes,0.79,0.83,0.75,0.45,0.86,0.76,0.31,ComplementNB,"{'alpha': 7.0, 'force_alpha': False, 'norm': False}",0.01
+Naïve Bayes,0.79,0.83,0.75,0.45,0.86,0.76,0.31,ComplementNB,"{'alpha': 7.0, 'force_alpha': True, 'norm': False}",0.01
+Naïve Bayes,0.79,0.83,0.74,0.44,0.86,0.75,0.3,ComplementNB,"{'alpha': 5.0, 'force_alpha': False, 'norm': False}",0.01
+Naïve Bayes,0.78,0.83,0.74,0.44,0.86,0.75,0.3,ComplementNB,"{'alpha': 4.0, 'force_alpha': False, 'norm': False}",0.01
+Naïve Bayes,0.78,0.83,0.74,0.44,0.86,0.75,0.3,ComplementNB,"{'alpha': 4.0, 'force_alpha': True, 'norm': False}",0.01

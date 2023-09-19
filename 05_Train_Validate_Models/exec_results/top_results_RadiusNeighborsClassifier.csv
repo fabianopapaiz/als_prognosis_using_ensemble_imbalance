@@ -1,2 +1,0 @@
-Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
-k-NN,0.64,0.94,0.35,0.28,0.65,0.42,0.16,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 0.3, 'weights': 'distance'}",0.02
