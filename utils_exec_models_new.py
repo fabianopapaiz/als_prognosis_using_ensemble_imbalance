@@ -48,8 +48,11 @@ N_JOBS = 7
 CV_N_SPLITS = 5
 
 
-def sort_performances_results(df, cols_order_to_sort=['BalAcc', 'Sens', 'Spec'], cols_to_return=None):
-    df_bests = df.sort_values(cols_order_to_sort, ascending=False).copy()
+def sort_performances_results(df, cols_order_to_sort=['balanced_accuracy', 'sensitivity', 'specificity', 'fit_time'], cols_to_return=None):
+    df_bests = df.sort_values(
+        cols_order_to_sort, 
+        ascending=[False, False, False, True]
+    ).copy()
     if cols_to_return is not None:
         return df_bests[cols_to_return]
     else:
@@ -215,6 +218,198 @@ def create_models_RF_grid(param_grid=None, testing=False):
     return classifier, param_grid
 
 
+def create_models_DT_grid(param_grid=None, testing=False):
+    # hyperparams
+    max_depths = [3, 4, 5, 7, 9, 10, 15, 25] #, 50]
+    criterions = ['gini', 'entropy'] #, 'log_loss'] LOG-LOSS DOESN'T WORK
+    class_weights = [None, 'balanced']
+    class_weights = ['balanced']
+
+
+    if testing:
+        max_depths = [5, 7]
+        criterions = ['gini', 'entropy']
+        class_weights = ['balanced']
+
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "max_depth": max_depths,
+            "criterion": criterions,
+            "class_weight": class_weights,
+            "random_state": [RANDOM_STATE],
+        }
+    )    
+
+    classifier = DecisionTreeClassifier()
+
+    return classifier, param_grid
+
+
+def create_models_ComplementNB_grid(param_grid=None, testing=False):
+    # hyperparams
+    alphas = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    norms = [False, True]
+
+    if testing:
+        alphas = [0.1, 0.5]
+        norms = [False]
+
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "alpha": alphas,
+            "norm": norms,
+        }
+    )    
+
+    classifier = ComplementNB()
+
+    return classifier, param_grid
+
+
+def create_models_kNN_grid(param_grid=None, testing=False):
+    # hyperparams
+    weights = ['uniform', 'distance']
+    distance_metrics = [
+        'euclidean',
+        'manhattan',
+        'chebyshev',
+    ]
+    #kNN
+    ks = [3, 5, 9, 15] 
+
+
+    if testing:
+        weights = ['distance']
+        distance_metrics = ['manhattan']
+        #kNN
+        ks = [5] 
+
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "n_neighbors": ks,
+            "weights": weights,
+            "metric": distance_metrics,
+        }
+    )    
+
+    classifier = KNeighborsClassifier()
+
+    return classifier, param_grid
+
+
+def create_models_RadiusNN_grid(param_grid=None, testing=False):
+    # hyperparams
+    weights = ['uniform', 'distance']
+    distance_metrics = [
+        'euclidean',
+        'manhattan',
+        'chebyshev',
+    ]
+
+    #radius
+    radius_set = [0.3, 0.5, 0.7, 1.0] 
+    leaf_sizes = [50, 100, 200] 
+    outlier_labels = [0, 1]
+
+    if testing:
+        weights = ['distance']
+        distance_metrics = ['manhattan']
+        #kNN
+        ks = [5] 
+        #radius
+        radius_set = [0.3] 
+        leaf_sizes = [50] 
+        outlier_labels = [1]
+
+
+    if param_grid is None:
+        param_grid = []
+
+
+    param_grid.append(
+        {
+            "radius": radius_set,
+            "weights": weights,
+            "leaf_size": leaf_sizes,
+            "outlier_label": outlier_labels,
+            "metric": distance_metrics,
+        }
+    )    
+
+    classifier = RadiusNeighborsClassifier()
+
+
+    return classifier, param_grid
+
+
+def create_models_GaussianNB_grid(param_grid=None, testing=False):
+
+    param_grid = [{}]    
+
+    classifier = GaussianNB()
+
+    return classifier, param_grid
+
+
+def create_models_NN_grid(qty_features, param_grid=None, testing=False):
+    # hyperparams
+    max_iter = [1000]
+    layers = [
+        (qty_features,),
+        (qty_features, qty_features),
+        (qty_features, qty_features, qty_features),
+        (qty_features, (qty_features*2)),
+        (qty_features, (qty_features*2), qty_features),
+        (qty_features, (qty_features*2), (qty_features*2), qty_features),
+    ]
+    alphas = [0.0001, 0.00001, 0.05, 0.1, 0.3, 0.5]
+    activations = ['tanh', 'relu']
+    solvers = ['sgd', 'adam']
+    learning_rates = ['constant','adaptive']
+    learning_rate_init = [0.7]
+
+
+    if testing:
+        max_iter = [300]
+        layers = [(qty_features)]
+        alphas = [0.1, 0.3]
+        activations = ['relu']
+        solvers = ['sgd']
+        learning_rates = ['constant']
+
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "max_iter": max_iter,
+            "hidden_layer_sizes": layers,
+            "alpha": alphas,
+            "activation": activations,
+            "solver": solvers,
+            "learning_rate": learning_rates,
+            "learning_rate_init": learning_rate_init,
+            "random_state": [RANDOM_STATE],
+        }
+    )    
+   
+    classifier = MLPClassifier()
+
+    return classifier, param_grid
+
 
 def create_models_SVM_grid(param_grid=None, testing=False):
     # hyperparams
@@ -252,15 +447,14 @@ def create_models_SVM_grid(param_grid=None, testing=False):
     return classifier, param_grid
 
 
-PERFORMANCE_THRESHOLD = 0.75 #(80%)
-PERFORMANCE_COLUMN    ='balanced_accuracy'
+# PERFORMANCE_THRESHOLD = 0.75 #(80%)
+# PERFORMANCE_COLUMN    ='balanced_accuracy'
 
-def get_grid_search_performances(grid, classifier, performance_threshold=PERFORMANCE_THRESHOLD, 
-                                 performance_column=PERFORMANCE_COLUMN, sort_results=True):
+def get_grid_search_performances(grid, classifier, get_n_best_performances=5):
 
     df_results = pd.DataFrame(grid.cv_results_)
 
-    df_results['Classifier'] = get_classifier_class_name(classifier)
+    df_results['classifier'] = get_classifier_class_name(classifier)
 
     # reduce the name of the columns by removing the initial string "mean_test_"
     for col in df_results.columns:
@@ -271,9 +465,7 @@ def get_grid_search_performances(grid, classifier, performance_threshold=PERFORM
                 inplace=True,
             )
 
-
-    # remove performances lower than "performance_threshold" (default: 0.75)
-    df_results = df_results.loc[(df_results[performance_column] >= performance_threshold)].copy()
+    df_results.rename(columns={'mean_score_time': 'fit_time'}, inplace=True)
 
     # get only the columns of interest        
     cols_of_interest = [
@@ -286,35 +478,171 @@ def get_grid_search_performances(grid, classifier, performance_threshold=PERFORM
         'precision',
         'f1',
         'params',
+        'fit_time'
     ]
     df_results = df_results[cols_of_interest]
 
-    # rouind the values using 2 decimal places
+    # rank the results by 'balanced_accuracy', 'sensitivity', 'specificity'
+    df_results = sort_performances_results(
+        df=df_results,
+    )
+
+    # get only the "n" best performances (default=5)
+    df_results = df_results.head(get_n_best_performances)
+
+    # round the values using 2 decimal places
     df_results = df_results.round(2)        
     
     return df_results
 
 
+def grid_search_refit_strategy(cv_results):
+    """Define the strategy to select the best estimator.
+
+    The strategy defined here is to filter-out all results below a precision threshold
+    of 0.98, rank the remaining by recall and keep all models with one standard
+    deviation of the best by recall. Once these models are selected, we can select the
+    fastest model to predict.
+
+    Parameters
+    ----------
+    cv_results : dict of numpy (masked) ndarrays
+        CV results as returned by the `GridSearchCV`.
+
+    Returns
+    -------
+    best_index : int
+        The index of the best estimator as it appears in `cv_results`.
+    """
+    # balanced_accuracy_threshold = 0.73
+
+    df_cv_results = pd.DataFrame(cv_results)
+    # # print("All grid-search results:")
+    # # print_dataframe(df_cv_results)
+
+    # # Filter-out all results below the threshold
+    # high_bal_acc_cv_results = df_cv_results[
+    #     df_cv_results[f'mean_test_balanced_accuracy'] >= balanced_accuracy_threshold
+    # ]
+
+    # print(f"Models with a precision higher than {balanced_accuracy_threshold}:")
+    # print_dataframe(high_precision_cv_results)
+    # high_bal_acc_cv_results = df_cv_results
+
+    df_cv_results = df_cv_results[
+        [
+            "mean_score_time",
+            #
+            "mean_test_balanced_accuracy",
+            "std_test_balanced_accuracy",
+            "rank_test_balanced_accuracy",
+            #
+            "mean_test_sensitivity",
+            "std_test_sensitivity",
+            "rank_test_sensitivity",
+            #
+            "mean_test_specificity",
+            "std_test_specificity",
+            "rank_test_specificity",
+            #
+            "params",
+        ]
+    ]
+
+    # Select the most performant models in terms of balanced accuracy
+    # (within 1 sigma from the best)
+    best_bal_acc_std = df_cv_results["mean_test_balanced_accuracy"].std()
+    best_bal_acc = df_cv_results["mean_test_balanced_accuracy"].max()
+    best_bal_acc_threshold = best_bal_acc - best_bal_acc_std
+
+    high_bal_acc_cv_results = df_cv_results[
+        df_cv_results["mean_test_balanced_accuracy"] > best_bal_acc_threshold
+    ]
+
+    # Select the most performant models in terms of sensitivity
+    # (within 1 sigma from the best)
+    best_sensitivity_std = high_bal_acc_cv_results["mean_test_sensitivity"].std()
+    best_sensitivity = high_bal_acc_cv_results["mean_test_sensitivity"].max()
+    best_sensitivity_threshold = best_sensitivity - best_sensitivity_std
+
+    high_sensitivity_cv_results = high_bal_acc_cv_results[
+        high_bal_acc_cv_results["mean_test_sensitivity"] > best_sensitivity_threshold
+    ]
+    # print(
+    #     "Out of the previously selected high precision models, we keep all the\n"
+    #     "the models within one standard deviation of the highest recall model:"
+    # )
+    # print('ASSSSS')
+    # print(high_sensitivity_cv_results)
+    # print()
+
+    # From the best candidates, select the fastest model to predict
+    fastest_top_sensitivity_high_precision_index = high_sensitivity_cv_results[
+        "mean_score_time"
+    ].idxmin()
+
+    # print(
+    #     "\nThe selected final model is the fastest to predict out of the previously\n"
+    #     "selected subset of best models based on precision and recall.\n"
+    #     "Its scoring time is:\n\n"
+    #     f"{high_recall_cv_results.loc[fastest_top_sensitivity_high_precision_index]}"
+    # )
+
+    print(high_sensitivity_cv_results)
+
+    return fastest_top_sensitivity_high_precision_index
+
+
+def create_classifier_from_string(classifier_as_str, dict_params_as_str):
+    # convert params to dict
+    dict_params = dict(dict_params_as_str)
+
+    # create an model instance passing the hyperparameters
+    klass = globals()[classifier_as_str]
+    clf = klass(**dict_params)
+
+    return clf
+
+
+
+def get_performances_from_predictions(y_validation, y_pred, y_pred_proba):
+    # calculate the scores using y_pred
+    bal_acc = np.round(balanced_accuracy_score(y_validation, y_pred), 2)
+    sens    = np.round(recall_score(y_validation, y_pred), 2)
+    spec    = np.round(recall_score(y_validation, y_pred, pos_label=0), 2)
+    f1      = np.round(f1_score(y_validation, y_pred), 2)
+    acc     = np.round(accuracy_score(y_validation, y_pred), 2)
+    precision    = np.round(precision_score(y_validation, y_pred), 2)
+
+    # calculate AUC using y_pred_proba
+    auc     = np.round(roc_auc_score(y_validation, y_pred_proba), 2)
+
+    return bal_acc, sens, spec, auc, acc, precision, f1
 
 
 
 DEFAULT_SCORE = 'balanced_accuracy'
 
-def exec_grid_search(classifier, param_grid, X, y, cv=None, 
+def exec_grid_search(classifier, param_grid, X_train, y_train, 
+                     X_valid, y_valid, 
+                     cv=None, 
                      n_jobs=N_JOBS, verbose=1, scoring=None, 
                      refit=None, return_train_score=False,
-                     sort_results=True, dataset_info='', 
-                     features_info='', 
-                     X_valid=None, y_valid=None, plot_roc_curve=False,
-                     performance_threshold=PERFORMANCE_THRESHOLD,
-                     performance_column=PERFORMANCE_COLUMN,
+                     get_n_best_performances=3,
+                    #  sort_results=True, 
+                    #  dataset_info='', 
+                    #  features_info='', 
+                    #  plot_roc_curve=False,
                      ):
 
 
-    # get only array of output y, if it was a dataFrame
-    if type(y) is pd.DataFrame:
-        y = y[utils.CLASS_COLUMN].ravel()  
+    # get only array of output y_train, if it was a dataFrame
+    if type(y_train) is pd.DataFrame:
+        y_train = y_train[utils.CLASS_COLUMN].ravel()  
 
+    # # get only array of output y_valid, if it was a dataFrame
+    # if type(y_valid) is pd.DataFrame:
+    #     y_valid = y_valid[utils.CLASS_COLUMN].ravel()  
 
     if scoring is None:
         scoring = get_default_scoring()
@@ -341,18 +669,143 @@ def exec_grid_search(classifier, param_grid, X, y, cv=None,
     )
 
     # train the gridSearch models
-    grid.fit(X, y)    
+    grid.fit(X_train, y_train)    
 
 
     # get performance for each set of hyperparams
-    # filtering by perfromance_threshold
-    df_results = get_grid_search_performances(
+    # filtering by the "n" best performances (default: 3)
+    df_performances = get_grid_search_performances(
         classifier=classifier,
-        grid_search=grid,
-        sort_results=sort_results,
-        performance_threshold=performance_threshold,
-        performance_column=performance_column
+        grid=grid,
+        get_n_best_performances=get_n_best_performances,
     )
+
+
+    best_models_performances = []
+    det_curve_data = []
+    precision_recall_curve_data = []
+    roc_curve_data = []
+    predictions_data = []
+
+    # make predictions using the best classifiers
+    for idx, row in df_performances.iterrows():
+        clf = create_classifier_from_string(
+            classifier_as_str=row.classifier,
+            dict_params_as_str=row.params,
+        )
+
+        # fit the classifier again using training data
+        clf.fit(X_train, y_train)
+
+        # make predictions
+        y_pred = clf.predict(X_valid)
+
+        # make predictions using probabilities, returning the class 
+        # probabilities for sample.
+        # The first column represents the probability of the 
+        # negative class (Non-Short) and the second column represents 
+        # the probability of the positive class (Short).
+        y_pred_proba = clf.predict_proba(X_valid)
+        y_pred_proba = y_pred_proba[:,1] # get short-survival probabilities
+
+        bal_acc, sens, spec, auc, acc, prec, f1 = get_performances_from_predictions(
+            y_validation=y_valid,
+            y_pred=y_pred,
+            y_pred_proba=y_pred_proba,
+        )
+
+        best_models_performances.append({
+            'Model': utils.get_model_description(row.classifier),
+            'balanced_accuracy': bal_acc,
+            'sensitivity': sens,
+            'specificity': spec,
+            'f1_score': f1,
+            'AUC': auc,
+            'accuracy': acc,
+            'precision': prec,
+            'Model_Class': row.classifier,
+            'Hyperparams': row.params,
+            'fit_time': row.fit_time,
+        })
+
+    # create a dataFrame with the best performances
+    df_best_performances = pd.DataFrame(best_models_performances)
+
+    # sort the performances and get the first row (best model)
+    df_best_performances = sort_performances_results(
+        df=df_best_performances,
+    )
+    df_best_performances = df_best_performances.head(1)
+
+    # collect additional info about the best model
+    for idx, row in df_best_performances.iterrows():
+
+        # =======================================================
+        # Detection Error Tradeoff (DET) curve
+        # =======================================================
+        fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
+        det_curve_aux = {
+            'Model'      : row.Model, 
+            'Hyperparams': row.Hyperparams, 
+            'FPR'        : fpr, 
+            'FNR'        : fnr, 
+            'Thresholds' : thresholds,
+        }
+        det_curve_data.append(det_curve_aux)
+
+        # =======================================================
+        # Precision-Recall curve
+        # =======================================================
+        precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
+        au_prec_recall_curve = sk.metrics.auc(recall, precision)
+        precision_recall_curve_aux = {
+            'Model'      : row.Model, 
+            'Hyperparams': row.Hyperparams, 
+            'Precision'  : precision,
+            'Recall'     : recall, 
+            'Thresholds' : thresholds,
+        }
+        precision_recall_curve_data.append(precision_recall_curve_aux)
+
+        # =======================================================
+        # ROC curve
+        # =======================================================
+        fpr, tpr, thresholds = sk.metrics.roc_curve(y_valid, y_pred_proba)
+        roc_auc = sk.metrics.auc(fpr, tpr)
+        roc_curve_aux = {
+            'Model'      : row.Model, 
+            'Hyperparams': row.Hyperparams, 
+            'FPR'        : fpr, 
+            'TPR'        : tpr, 
+            'Thresholds' : thresholds,
+        }
+        roc_curve_data.append(roc_curve_aux)
+
+        # =======================================================
+        # Predictions data (using predict and predict_proba)
+        # =======================================================
+        predictions_aux = {
+            'Model'       : row.Model, 
+            'Hyperparams' : row.Hyperparams, 
+            'y_pred'      : y_pred, 
+            'y_pred_proba': y_pred_proba
+        }
+        predictions_data.append(predictions_data)
+
+
+
+    # create a dict representing additional info (DET, Prec-Recall-curve, ROC, and predictions)
+    additional_info = {
+        'DET': det_curve_data,
+        'Precision-Recall-Curve': precision_recall_curve_data,
+        'ROC': roc_curve_data,
+        'Predictions': predictions_data,
+    }
+
+
+
+    return grid, df_best_performances, additional_info
+
 
     # filter
 
