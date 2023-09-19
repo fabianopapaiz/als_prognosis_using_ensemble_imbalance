@@ -1,0 +1,2 @@
+Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
+k-NN,0.63,0.3,0.97,0.39,0.79,0.89,0.56,KNeighborsClassifier,"{'metric': 'manhattan', 'n_neighbors': 5, 'weights': 'distance'}",0.02

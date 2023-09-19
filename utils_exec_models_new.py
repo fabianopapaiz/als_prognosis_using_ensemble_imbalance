@@ -365,8 +365,11 @@ def create_models_GaussianNB_grid(param_grid=None, testing=False):
 
 def create_models_NN_grid(qty_features, param_grid=None, testing=False):
     # hyperparams
-    max_iter = [1000]
+    max_iter = [2000]
     layers = [
+        (30),
+        (30, 30),
+        (30, 30, 30),
         (qty_features,),
         (qty_features, qty_features),
         (qty_features, qty_features, qty_features),
@@ -378,16 +381,17 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
     activations = ['tanh', 'relu']
     solvers = ['sgd', 'adam']
     learning_rates = ['constant','adaptive']
-    learning_rate_init = [0.7]
+    learning_rate_init = [0.1, 0.01, 0.3, 0.03, 0.5, 0.7]
 
 
     if testing:
-        max_iter = [300]
-        layers = [(qty_features)]
+        max_iter = [2000]
+        layers = [(qty_features), (30, 30)]
         alphas = [0.1, 0.3]
         activations = ['relu']
         solvers = ['sgd']
         learning_rates = ['constant']
+        learning_rate_init = [0.1, 0.01]
 
 
     if param_grid is None:
@@ -628,7 +632,7 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
                      cv=None, 
                      n_jobs=N_JOBS, verbose=1, scoring=None, 
                      refit=None, return_train_score=False,
-                     get_n_best_performances=3,
+                     get_n_best_performances=5,
                     #  sort_results=True, 
                     #  dataset_info='', 
                     #  features_info='', 
@@ -673,7 +677,7 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
 
 
     # get performance for each set of hyperparams
-    # filtering by the "n" best performances (default: 3)
+    # filtering by the "n" best performances (default: 5)
     df_performances = get_grid_search_performances(
         classifier=classifier,
         grid=grid,
@@ -735,6 +739,9 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
     df_best_performances = sort_performances_results(
         df=df_best_performances,
     )
+
+    df_best_performances_detailed = df_best_performances.copy()
+
     df_best_performances = df_best_performances.head(1)
 
     # collect additional info about the best model
@@ -804,7 +811,7 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
 
 
 
-    return grid, df_best_performances, additional_info
+    return grid, df_best_performances, df_best_performances_detailed, additional_info
 
 
     # filter

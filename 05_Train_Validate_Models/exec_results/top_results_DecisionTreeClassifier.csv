@@ -1,0 +1,5 @@
+Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
+Decision Tree,0.79,0.79,0.8,0.48,0.83,0.79,0.34,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 7, 'random_state': 42}",0.01
+Decision Tree,0.78,0.83,0.73,0.43,0.83,0.74,0.29,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 5, 'random_state': 42}",0.01
+Decision Tree,0.77,0.81,0.72,0.42,0.82,0.73,0.28,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 5, 'random_state': 42}",0.01
+Decision Tree,0.72,0.62,0.82,0.42,0.71,0.79,0.32,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 7, 'random_state': 42}",0.01
