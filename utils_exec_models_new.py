@@ -417,6 +417,35 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
     return classifier, param_grid
 
 
+def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=False):
+    # hyperparams
+    num_estimators = [11, 15, 51, 75, 101, 201, 301]
+    sampling_strategies = ['all', 'majority', 'auto']
+    warm_starts = [False, True]
+
+    if testing:
+        num_estimators = [3] 
+        classifiers = [classifiers[0]]
+        warm_starts = [False]
+
+    if param_grid is None:
+        param_grid = []
+
+    param_grid.append(
+        {
+            "estimator": classifiers,
+            "n_estimators": num_estimators,
+            "sampling_strategy": sampling_strategies,
+            "warm_start": warm_starts,
+            "random_state": [RANDOM_STATE],
+        }
+    )    
+
+    classifier = BalancedBaggingClassifier()
+
+    return classifier, param_grid
+
+
 def create_models_SVM_grid(param_grid=None, testing=False):
     # hyperparams
     kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
