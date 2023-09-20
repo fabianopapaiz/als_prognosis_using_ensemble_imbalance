@@ -424,10 +424,17 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
     
     sampling_strategies = ['all', 'majority', 'auto']
     warm_starts = [False, True]
+    replacements = [False, True] 
+    bootstraps = [False, True] 
+    oob_scores = [False, True]
+
 
     if testing:
         num_estimators = [3, 5] 
         warm_starts = [False]
+        replacements = [False] 
+        bootstraps = [False] 
+        oob_scores = [False]
 
     if param_grid is None:
         param_grid = []
@@ -438,6 +445,9 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
             "n_estimators": num_estimators,
             "sampling_strategy": sampling_strategies,
             "warm_start": warm_starts,
+            "replacement": replacements,
+            "bootstrap": bootstraps,
+            "oob_score": oob_scores,
             "random_state": [RANDOM_STATE],
         }
     )    
