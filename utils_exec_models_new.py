@@ -417,15 +417,16 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
     return classifier, param_grid
 
 
-def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=False):
+def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False):
     # hyperparams
-    num_estimators = [11, 15, 51, 75, 101, 201, 301]
+    # num_estimators = [3, 5, 7, 11, 15, 19, 21, 25, 31] # ,51, 75, 101, 201, 301]
+    num_estimators = [7, 11, 15, 19, 21, 25] # ,51, 75, 101, 201, 301]
+    
     sampling_strategies = ['all', 'majority', 'auto']
     warm_starts = [False, True]
 
     if testing:
-        num_estimators = [3] 
-        classifiers = [classifiers[0]]
+        num_estimators = [3, 5] 
         warm_starts = [False]
 
     if param_grid is None:
@@ -433,7 +434,7 @@ def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=Fal
 
     param_grid.append(
         {
-            "estimator": classifiers,
+            "estimator": [estimator],
             "n_estimators": num_estimators,
             "sampling_strategy": sampling_strategies,
             "warm_start": warm_starts,
@@ -443,7 +444,7 @@ def create_models_BalancedBagging_grid(classifiers, param_grid=None, testing=Fal
 
     classifier = BalancedBaggingClassifier()
 
-    return classifier, param_grid
+    return classifier, estimator, param_grid
 
 
 def create_models_SVM_grid(param_grid=None, testing=False):
@@ -630,7 +631,10 @@ def grid_search_refit_strategy(cv_results):
 
 def create_classifier_from_string(classifier_as_str, dict_params_as_str):
     # convert params to dict
-    dict_params = dict(dict_params_as_str)
+    try:
+        dict_params = dict(dict_params_as_str)
+    except:
+        dict_params = eval(dict_params_as_str)    
 
     # create an model instance passing the hyperparameters
     klass = globals()[classifier_as_str]
@@ -749,19 +753,44 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
             y_pred_proba=y_pred_proba,
         )
 
-        best_models_performances.append({
-            'Model': utils.get_model_description(row.classifier),
-            'balanced_accuracy': bal_acc,
-            'sensitivity': sens,
-            'specificity': spec,
-            'f1_score': f1,
-            'AUC': auc,
-            'accuracy': acc,
-            'precision': prec,
-            'Model_Class': row.classifier,
-            'Hyperparams': row.params,
-            'fit_time': row.fit_time,
-        })
+
+        model_desc = utils.get_model_description(row.classifier)
+        params = str(row.params).replace('\n', '')
+
+        # remove estimator param from the Balanced-Bagging classifier
+        if model_desc == 'Balanced Bagging':
+            estimator = str(row.params.pop('estimator')).replace('\n', '')
+            params = str(row.params).replace('\n', '')
+
+            best_models_performances.append({
+                'Model': model_desc,
+                'balanced_accuracy': bal_acc,
+                'sensitivity': sens,
+                'specificity': spec,
+                'f1_score': f1,
+                'AUC': auc,
+                'accuracy': acc,
+                'precision': prec,
+                'Model_Class': row.classifier,
+                'Hyperparams': params,
+                'Estimator': estimator,
+                'fit_time': row.fit_time,
+            })
+
+        else:
+            best_models_performances.append({
+                'Model': model_desc,
+                'balanced_accuracy': bal_acc,
+                'sensitivity': sens,
+                'specificity': spec,
+                'f1_score': f1,
+                'AUC': auc,
+                'accuracy': acc,
+                'precision': prec,
+                'Model_Class': row.classifier,
+                'Hyperparams': params,
+                'fit_time': row.fit_time,
+            })
 
     # create a dataFrame with the best performances
     df_best_performances = pd.DataFrame(best_models_performances)
