@@ -1,6 +1,7 @@
 
 import ast
 import json
+import os
 import pickle
 
 import utils
@@ -895,6 +896,16 @@ def exec_grid_search(classifier, param_grid, X_train, y_train,
 def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, scenario, features_config, 
                 X_train, y_train, X_valid, y_valid):
 
+
+    # Create folders if not exists
+    if not os.path.exists(dir_dest):
+        os.makedirs(dir_dest)
+
+    dir_serialized_data = f'{dir_dest}/serialized_data'    
+    if not os.path.exists(dir_serialized_data):
+        os.makedirs(dir_serialized_data)
+
+
     # get model description
     model_desc = utils.get_model_description(classifier).replace('-', '')
 
@@ -1054,7 +1065,7 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # =========================================
     # save (serialize) the gridSearch instance
     # ==========================================
-    grid_object_to_save = f'{dir_dest}/serialized_data/grid_search__{name_to_save}.pickle'
+    grid_object_to_save = f'{dir_serialized_data}/grid_search__{name_to_save}.pickle'
 
     print('SAVING GRID-SEARCH OBJECT...')
     with open(grid_object_to_save, 'wb') as handle:
@@ -1064,7 +1075,7 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # =========================================
     # save (serialize) the additional_info data (DET, ROC, and Prec-Recal curves)
     # ==========================================
-    add_info_to_save = f'{dir_dest}/serialized_data/additional_info__{name_to_save}.pickle'
+    add_info_to_save = f'{dir_serialized_data}/additional_info__{name_to_save}.pickle'
     with open(add_info_to_save, 'wb') as handle:
         pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
