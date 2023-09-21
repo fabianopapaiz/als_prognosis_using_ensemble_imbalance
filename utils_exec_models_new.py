@@ -427,16 +427,16 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
     sampling_strategies = ['all', 'majority', 'auto']
     warm_starts = [False, True]
     replacements = [False, True] 
-    bootstraps = [False, True] 
-    oob_scores = [False, True]
+    # bootstraps = [False, True] 
+    # oob_scores = [False, True]
 
 
     if testing:
         num_estimators = [3, 5] 
         warm_starts = [False]
         replacements = [False] 
-        bootstraps = [False] 
-        oob_scores = [False]
+        # bootstraps = [False] 
+        # oob_scores = [False]
 
     if param_grid is None:
         param_grid = []
@@ -452,8 +452,8 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
             "sampling_strategy": sampling_strategies,
             "warm_start": warm_starts,
             "replacement": replacements,
-            "bootstrap": bootstraps,
-            "oob_score": oob_scores,
+            # "bootstrap": bootstraps,
+            # "oob_score": oob_scores,
             "random_state": [RANDOM_STATE],
         }
     )    
@@ -1046,11 +1046,11 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # ==================================================
     file_prefix = 'TESTING__' if testing else ''
     if scenario == 'Ensemble_Imbalance':
-        model_abrev_desc = utils.get_model_short_description(estimator).replace('-', '').replace('.', '').replace(' ', '')
+        model_abrev_desc = str(estimator).replace('Classifier', '').replace('()', '').replace('-', '').replace('.', '').replace(' ', '')
         suffix = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
         name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}__{suffix}'
     else:
-        model_abrev_desc = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
+        model_abrev_desc = str(classifier).replace('Classifier', '').replace('()', '').replace('-', '').replace('.', '').replace(' ', '')
         name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}'
 
 
