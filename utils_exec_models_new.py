@@ -440,9 +440,13 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
     if param_grid is None:
         param_grid = []
 
+    if type(estimator) is not list:
+        estimator = [estimator]
+
+
     param_grid.append(
         {
-            "estimator": [estimator],
+            "estimator": estimator,
             "n_estimators": num_estimators,
             "sampling_strategy": sampling_strategies,
             "warm_start": warm_starts,
@@ -926,10 +930,7 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # save predictions results using test data
     # ==============================================
     
-    det_curve_data = []
-    precision_recall_curve_data = []
-    roc_curve_data = []
-    predictions_data = []
+    additional_info = []
     validation_performances = []
 
     # make predictions using the best classifiers
@@ -960,13 +961,16 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         )
 
         classif_desc = utils.get_model_description(row.classifier)
-        params = str(row.params).replace('\n', '')
+        params = str(row.params).replace('\n', '').replace(' ', '')
         estimator = '' # used only with BalancedBagging
-
+        estimator_params = ''
+        
         # remove the estimator param from the Balanced-Bagging classifier
-        if classif_desc == 'Balanced Bagging':
-            estimator = str(row.params.pop('estimator')).replace('\n', '')
-            params = str(row.params).replace('\n', '')
+        if scenario == 'Ensemble_Imbalance':
+            estimator = row.params.pop('estimator')
+            estimator_params = str(estimator.get_params()).replace('\n', '').replace(' ', '')
+            # extract name of estimator classifier
+            estimator = str(estimator).replace('\n', '').replace(' ', '').split('(')[0]
 
         validation_performances.append({
             'Scenario': scenario,
@@ -983,7 +987,9 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
             #
             'Model_Class': row.classifier,
             'Hyperparams': params,
-            'Estimator': estimator,
+            'Estimator': utils.get_model_description(estimator),
+            'Estimator_Class': estimator,
+            'Estimator_Hyperparams': estimator_params,
             'fit_time': row.fit_time,
             # trainning performance
             'train_balanced_accuracy': row.balanced_accuracy,
@@ -996,101 +1002,120 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         })
 
 
+        # get and save information about DET curve, ROC curve, and Precision-Recal curve
+        det_curve, roc_curve, prec_recall_curve = get_predictions_additional_info(
+            y_valid, 
+            y_pred_proba
+        )
+        #
+        additional_info.append({
+            'Scenario': scenario,
+            'Features': features_config,
+            'Model': classif_desc,
+            'Model_Class': row.classifier,
+            'Hyperparams': params,
+            'Estimator': utils.get_model_description(estimator),
+            'Estimator_Class': estimator,
+            'Estimator_Hyperparams': estimator_params,
+            'DET': det_curve,
+            'ROC_Curve': roc_curve,
+            'Prec_Recall_Curve': prec_recall_curve,
+            'y_pred': y_pred, 
+            'y_pred_proba': y_pred_proba,
+        })
+
+
+
     # create a dataFrame with the best performances
     df_validation_performances = pd.DataFrame(validation_performances)
+
+
+    # ==================================================
+    # define the name used to save CSV and Pickle files
+    # ==================================================
+    file_prefix = 'TESTING__' if testing else ''
+    if scenario == 'Ensemble_Imbalance':
+        model_abrev_desc = utils.get_model_short_description(estimator).replace('-', '').replace('.', '').replace(' ', '')
+        suffix = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
+        name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}__{suffix}'
+    else:
+        model_abrev_desc = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
+        name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}'
 
 
     # =========================================
     # save CV validation + trainning results
     # ==========================================
-    file_prefix = 'TESTING__' if testing else ''
-
     print('SAVING PERFORMANCE RESULTS...')
-    model_abrev_desc = utils.get_model_short_description(classifier).replace('-', '')
-    csv_to_save = f'{dir_dest}/performance__{file_prefix}{model_abrev_desc}__{features_config}__{scenario}.csv'
+    csv_to_save = f'{dir_dest}/performance__{name_to_save}.csv'
     utils.save_to_csv(df=df_validation_performances, csv_file=csv_to_save)
 
 
     # =========================================
     # save (serialize) the gridSearch instance
     # ==========================================
-    # define the name of the file
-    grid_object_to_save = f'{dir_dest}/serialized_grid__{file_prefix}{model_abrev_desc}__{features_config}__{scenario}.pickle'
+    grid_object_to_save = f'{dir_dest}/serialized_data/grid_search__{name_to_save}.pickle'
 
     print('SAVING GRID-SEARCH OBJECT...')
     with open(grid_object_to_save, 'wb') as handle:
         pickle.dump(grid, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
+
+    # =========================================
+    # save (serialize) the additional_info data (DET, ROC, and Prec-Recal curves)
+    # ==========================================
+    add_info_to_save = f'{dir_dest}/serialized_data/additional_info__{name_to_save}.pickle'
+    with open(add_info_to_save, 'wb') as handle:
+        pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
+
+
     return grid, df_validation_performances
 
-    # # sort the performances and get the first row (best model)
-    # df_test_performances = sort_performances_results(
-    #     df=df_test_performances,
-    # )
 
-    # # collect additional info about the best model
-    # for idx, row in df_test_performances.iterrows():
+def get_predictions_additional_info(y_valid, y_pred_proba):
 
-    #     # =======================================================
-    #     # Predictions data (using predict and predict_proba)
-    #     # =======================================================
-    #     predictions_aux = {
-    #         'Model'       : row.Model, 
-    #         'Hyperparams' : row.Hyperparams, 
-    #         'y_pred'      : y_pred, 
-    #         'y_pred_proba': y_pred_proba
-    #     }
-    #     predictions_data.append(predictions_data)
+    # =======================================================
+    # Detection Error Tradeoff (DET) curve
+    # =======================================================
+    fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
+    det_curve = {
+        'FPR'        : fpr, 
+        'FNR'        : fnr, 
+        'Thresholds' : thresholds,
+    }
 
+    # =======================================================
+    # ROC curve
+    # =======================================================
+    fpr, tpr, thresholds = sk.metrics.roc_curve(y_valid, y_pred_proba)
+    roc_curve = {
+        'FPR'        : fpr, 
+        'TPR'        : tpr, 
+        'Thresholds' : thresholds,
+    }
 
-    #     # =======================================================
-    #     # Detection Error Tradeoff (DET) curve
-    #     # =======================================================
-    #     fpr, fnr, thresholds = sk.metrics.det_curve(y_valid, y_pred_proba)
-    #     det_curve_aux = {
-    #         'Model'      : row.Model, 
-    #         'Hyperparams': row.Hyperparams, 
-    #         'FPR'        : fpr, 
-    #         'FNR'        : fnr, 
-    #         'Thresholds' : thresholds,
-    #     }
-    #     det_curve_data.append(det_curve_aux)
+    # =======================================================
+    # Precision-Recall curve
+    # =======================================================
+    precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
+    prec_recall_curve = {
+        'Precision'  : precision,
+        'Recall'     : recall, 
+        'Thresholds' : thresholds,
+    }
 
-    #     # =======================================================
-    #     # Precision-Recall curve
-    #     # =======================================================
-    #     precision, recall, thresholds = sk.metrics.precision_recall_curve(y_valid, y_pred_proba)
-    #     au_prec_recall_curve = sk.metrics.auc(recall, precision)
-    #     precision_recall_curve_aux = {
-    #         'Model'      : row.Model, 
-    #         'Hyperparams': row.Hyperparams, 
-    #         'Precision'  : precision,
-    #         'Recall'     : recall, 
-    #         'Thresholds' : thresholds,
-    #     }
-    #     precision_recall_curve_data.append(precision_recall_curve_aux)
-
-    #     # =======================================================
-    #     # ROC curve
-    #     # =======================================================
-    #     fpr, tpr, thresholds = sk.metrics.roc_curve(y_valid, y_pred_proba)
-    #     roc_auc = sk.metrics.auc(fpr, tpr)
-    #     roc_curve_aux = {
-    #         'Model'      : row.Model, 
-    #         'Hyperparams': row.Hyperparams, 
-    #         'FPR'        : fpr, 
-    #         'TPR'        : tpr, 
-    #         'Thresholds' : thresholds,
-    #     }
-    #     roc_curve_data.append(roc_curve_aux)
+    #
+    return det_curve, roc_curve, prec_recall_curve
 
 
 
+def create_model_instances_from_performances(df):
+    models = list()
+    for idx, row in df.iterrows():
+        model_instance = create_classifier_from_string(
+            classifier_as_str=row.Model_Class,
+            dict_params_as_str=row.Hyperparams,
+        )
+        models.append(model_instance)
 
-    # # create a dict representing additional info (DET, Prec-Recall-curve, ROC, and predictions)
-    # additional_info = {
-    #     'DET': det_curve_data,
-    #     'Precision-Recall-Curve': precision_recall_curve_data,
-    #     'ROC': roc_curve_data,
-    #     'Predictions': predictions_data,
-    # }
+    return models
