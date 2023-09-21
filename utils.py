@@ -1362,7 +1362,9 @@ def create_data_frame_from_two_groups(series_1, series_2, title_group_1='Group-1
 
 
 def get_model_description(model_desc):
-    
+
+    model_desc = str(model_desc).replace('()', '')   
+
     NB_models = [
         'ComplementNB', 
         'GaussianNB', 
@@ -1430,11 +1432,13 @@ def get_model_description(model_desc):
     elif model_desc in BalancedBagging_models:
         return 'Balanced Bagging'
     else:
-        return model_desc
+        return model_desc.replace('Classifier', '')
 
 
 
 def get_model_short_description(model_desc):
+
+    model_desc = str(model_desc).replace('()', '')   
     
     NB_models = [
         'ComplementNB', 
@@ -1482,7 +1486,7 @@ def get_model_short_description(model_desc):
     elif model_desc in BalancedBagging_models:
         return 'Bal. Bagging'
     else:
-        return model_desc
+        return model_desc.replace('Classifier', '')
 
 
 
