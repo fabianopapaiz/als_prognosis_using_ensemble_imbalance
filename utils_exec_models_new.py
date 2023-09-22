@@ -252,7 +252,7 @@ def create_models_DT_grid(param_grid=None, testing=False):
 
 def create_models_NB_Complement_grid(param_grid=None, testing=False):
     # hyperparams
-    alphas = [0.1, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 7.0, 8.0, 9.0, 10.0, 15.0]
+    alphas = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     norms = [False, True]
     force_alphas = [False, True]
 
@@ -323,7 +323,7 @@ def create_models_RadiusNN_grid(param_grid=None, testing=False):
     ]
 
     #radius
-    radius_set = [0.3, 0.5, 0.7, 1.0] 
+    radius_set = [0.5, 0.7, 1.0, 1.5] 
     leaf_sizes = [50, 100, 200, 300, 500] 
     outlier_labels = [0, 1]
 
@@ -421,8 +421,7 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
 
 def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False):
     # hyperparams
-    # num_estimators = [3, 5, 7, 11, 15, 19, 21, 25, 31] # ,51, 75, 101, 201, 301]
-    num_estimators = [7, 11, 15, 19, 21, 25] # ,51, 75, 101, 201, 301]
+    num_estimators = [7, 11, 15, 19, 21, 25, 31 ,51]# , 75, 101, 201, 301]
     
     sampling_strategies = ['all', 'majority', 'auto']
     warm_starts = [False, True]
@@ -432,7 +431,7 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
 
 
     if testing:
-        num_estimators = [3, 5] 
+        num_estimators = [7, 11] 
         warm_starts = [False]
         replacements = [False] 
         # bootstraps = [False] 
@@ -1080,6 +1079,12 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
 
+    # sort the validation performances
+    df_validation_performances = sort_performances_results(
+        df=df_validation_performances,
+    )
+
+    #
     return grid, df_validation_performances
 
 

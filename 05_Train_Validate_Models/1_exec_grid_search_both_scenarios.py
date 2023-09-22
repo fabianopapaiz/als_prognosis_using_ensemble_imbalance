@@ -83,11 +83,12 @@ testing = False
 
 
 grid_configs = [
-#     utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
-#     utils_exec_models_new.create_models_kNN_grid(testing=testing),
+    # OK utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
+    utils_exec_models_new.create_models_kNN_grid(testing=testing),
 
-    utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
-    utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
+    # OK utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
+    
+    # utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
 
 #     utils_exec_models_new.create_models_DT_grid(testing=testing),
 #     utils_exec_models_new.create_models_SVM_grid(testing=testing),    
@@ -107,7 +108,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
     # for each ML algorithm and param_grid
     for classifier, param_grid in grid_configs: 
         model_desc = utils.get_model_short_description(classifier).replace('-', '')
-        utils.print_string_with_separators(f'{model_desc} - {features_config}')
+        utils.print_string_with_separators(f'{classifier} - {features_config}')
 
 
         # ====================================================
@@ -151,8 +152,9 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
         scenario = 'Ensemble_Imbalance'
         print(f'   Executing {scenario}')
 
+        # use the best 10 performances as estimator to Balanced-Bagging    
         models_to_use_as_estimator = utils_exec_models_new.create_model_instances_from_performances(
-            df=df_validation_performances
+            df=df_validation_performances.head(10)
         )
 
         es_classifier, es_estimator, es_param_grid = utils_exec_models_new.create_models_BalancedBagging_grid(
