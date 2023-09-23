@@ -92,10 +92,15 @@ grid_configs = [
     
     # OK 0utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
 
-    utils_exec_models_new.create_models_DT_grid(testing=testing),
-#     utils_exec_models_new.create_models_SVM_grid(testing=testing),    
+    # utils_exec_models_new.create_models_DT_grid(testing=testing),
+    # utils_exec_models_new.create_models_SVM_grid(testing=testing),    
 #     utils_exec_models_new.create_models_RF_grid(testing=testing),
-#     utils_exec_models_new.create_models_NN_grid(qty_features=X_train.shape[1], testing=testing),
+    
+    ['NeuralNetworks', None],
+    # utils_exec_models_new.create_models_NN_grid(qty_features=X_train.shape[1], testing=testing),
+
+
+
 ]
 
 
@@ -107,8 +112,16 @@ grid_configs = [
 
 # for each features_config and datasets
 for features_config, X_train, y_train, X_valid, y_valid in datasets:
+    
     # for each ML algorithm and param_grid
     for classifier, param_grid in grid_configs: 
+    
+        if classifier == 'NeuralNetworks':
+            classifier, param_grid = utils_exec_models_new.create_models_NN_grid(
+                qty_features=X_train.shape[1], 
+                testing=testing
+            )
+    
         model_desc = utils.get_model_short_description(classifier).replace('-', '')
         utils.print_string_with_separators(f'{classifier} - {features_config}')
 
