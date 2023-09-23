@@ -28,6 +28,8 @@ import seaborn as sns
 
 import pickle
 
+from timeit import default_timer as timer
+
 
 
 # ======================================================================
@@ -83,14 +85,14 @@ testing = False
 
 
 grid_configs = [
-    # OK utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
-    utils_exec_models_new.create_models_kNN_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_kNN_grid(testing=testing),
 
-    # OK utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
     
-    # utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
+    # OK 0utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
 
-#     utils_exec_models_new.create_models_DT_grid(testing=testing),
+    utils_exec_models_new.create_models_DT_grid(testing=testing),
 #     utils_exec_models_new.create_models_SVM_grid(testing=testing),    
 #     utils_exec_models_new.create_models_RF_grid(testing=testing),
 #     utils_exec_models_new.create_models_NN_grid(qty_features=X_train.shape[1], testing=testing),
@@ -129,6 +131,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
         )
 
         # fit the grid and save the trainning and validation performances
+        start = timer()
         grid, df_validation_performances = utils_exec_models_new.exec_grid_search_and_save_performances(
             dir_dest=dir_dest, 
             testing=testing, 
@@ -141,7 +144,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
             X_valid=X_valid, 
             y_valid=y_valid,
         )
-
+        print(timer() - start)
         print(f' FINISHED !!! [{model_desc} - {scenario} - {features_config}]')
         print()
 
@@ -174,6 +177,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
         )
 
         # fit the grid and save the trainning and validation performances
+        start = timer()
         es_grid, es_df_validation_performances = utils_exec_models_new.exec_grid_search_and_save_performances(
             dir_dest=dir_dest, 
             testing=testing, 
@@ -186,6 +190,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
             X_valid=X_valid, 
             y_valid=y_valid,
         )
+        print(timer() - start)
         
         
         # clear_output() 
