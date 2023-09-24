@@ -27,7 +27,7 @@ from imblearn.over_sampling import SMOTE
 import imblearn.under_sampling as resus
 import imblearn.ensemble as resemb
 import imblearn.combine as reshyb
-from imblearn.ensemble import BalancedBaggingClassifier
+from imblearn.ensemble import BalancedBaggingClassifier, BalancedRandomForestClassifier
 
 
 import matplotlib.pyplot as plt
@@ -421,21 +421,17 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
 
 def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False):
     # hyperparams
-    num_estimators = [7, 11, 15, 19, 21, 25, 31 ,51]# , 75, 101, 201, 301]
+    num_estimators = [7, 11, 15, 19, 21, 25, 31 ,51, 101]
     
     sampling_strategies = ['all', 'majority', 'auto']
     warm_starts = [False, True]
     replacements = [False, True] 
-    # bootstraps = [False, True] 
-    # oob_scores = [False, True]
 
 
     if testing:
         num_estimators = [7, 11] 
         warm_starts = [False]
         replacements = [False] 
-        # bootstraps = [False] 
-        # oob_scores = [False]
 
     if param_grid is None:
         param_grid = []
@@ -451,8 +447,6 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
             "sampling_strategy": sampling_strategies,
             "warm_start": warm_starts,
             "replacement": replacements,
-            # "bootstrap": bootstraps,
-            # "oob_score": oob_scores,
             "random_state": [RANDOM_STATE],
         }
     )    
@@ -460,6 +454,58 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
     classifier = BalancedBaggingClassifier()
 
     return classifier, estimator, param_grid
+
+
+def create_models_BalancedRandomForest_grid(param_grid=None, testing=False):
+    
+    # parameters RF
+    # hyperparams
+    max_depths = [5, 7, 10, 15] #, 25, 50]
+    criterions = ['gini', 'entropy'] 
+
+
+    # hyperparams Balanced RF
+    num_estimators = [7, 11, 15, 19, 21, 25, 31 ,51]
+    
+    sampling_strategies = ['all', 'majority', 'auto']
+    warm_starts = [False, True]
+    replacements = [False, True] 
+
+
+    if testing:
+        num_estimators = [7, 11] 
+        warm_starts = [False]
+        replacements = [False] 
+        max_depths = [5, 7]
+        num_estimators = [5, 9] 
+        criterions = ['gini']
+        class_weights = ['balanced']
+
+    if param_grid is None:
+        param_grid = []
+
+    if type(estimator) is not list:
+        estimator = [estimator]
+
+
+    param_grid.append(
+        {
+            # RF
+            "n_estimators": num_estimators,
+            "max_depth": max_depths,
+            "criterion": criterions,
+            # Balanced RF
+            "sampling_strategy": sampling_strategies,
+            "warm_start": warm_starts,
+            "replacement": replacements,
+            "random_state": [RANDOM_STATE],
+        }
+    )    
+
+    classifier = BalancedRandomForestClassifier()
+
+    return classifier, estimator, param_grid
+
 
 
 def create_models_SVM_grid(param_grid=None, testing=False):
@@ -975,8 +1021,9 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         estimator = '' # used only with BalancedBagging
         estimator_params = ''
         
-        # remove the estimator param from the Balanced-Bagging classifier
-        if scenario == 'Ensemble_Imbalance':
+
+        # remove the estimator param info for the Balanced-Bagging classifier
+        if str(row.classifier) == 'BalancedBaggingClassifier()':
             estimator = row.params.pop('estimator')
             estimator_params = str(estimator.get_params()).replace('\n', '').replace(' ', '')
             # extract name of estimator classifier

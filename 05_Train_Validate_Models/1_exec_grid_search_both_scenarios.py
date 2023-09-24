@@ -81,7 +81,7 @@ grids_executed = []
 
 # get all param_grid combinations for each classifier
 testing = True
-testing = False
+# testing = False
 
 
 grid_configs = [
@@ -90,15 +90,15 @@ grid_configs = [
 
     # OK 0 utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
     
-    # OK 0utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
 
-    # utils_exec_models_new.create_models_DT_grid(testing=testing),
-    # utils_exec_models_new.create_models_SVM_grid(testing=testing),    
-#     utils_exec_models_new.create_models_RF_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_DT_grid(testing=testing),
+    # OK 0 utils_exec_models_new.create_models_SVM_grid(testing=testing),    
+
+    # OK 0 ['NeuralNetworks', None],
+
+    utils_exec_models_new.create_models_RF_grid(testing=testing),
     
-    ['NeuralNetworks', None],
-    # utils_exec_models_new.create_models_NN_grid(qty_features=X_train.shape[1], testing=testing),
-
 
 
 ]
@@ -116,11 +116,14 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
     # for each ML algorithm and param_grid
     for classifier, param_grid in grid_configs: 
     
+        
+        # configure Neural Networks according to the number of features
         if classifier == 'NeuralNetworks':
             classifier, param_grid = utils_exec_models_new.create_models_NN_grid(
                 qty_features=X_train.shape[1], 
                 testing=testing
             )
+
     
         model_desc = utils.get_model_short_description(classifier).replace('-', '')
         utils.print_string_with_separators(f'{classifier} - {features_config}')
@@ -162,22 +165,33 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
         print()
 
         
-        # ====================================================
+        # =======================================================
         # execute gridSearch in the Ensemble_Imbalance scenario
-        # ====================================================
+        # =======================================================
+
         scenario = 'Ensemble_Imbalance'
         print(f'   Executing {scenario}')
 
-        # use the best 10 performances as estimator to Balanced-Bagging    
-        models_to_use_as_estimator = utils_exec_models_new.create_model_instances_from_performances(
-            df=df_validation_performances.head(10)
-        )
+        # verify if is executing a Random Forest classifier
+        if str(classifier) == 'RandomForestClassifier()':
+            es_classifier, es_estimator, es_param_grid = utils_exec_models_new.create_models_BalancedRandomForest_grid(
+                testing=testing,
+            )
+        #
+        # for Balanced Bagging classifier
+        else:    
 
-        es_classifier, es_estimator, es_param_grid = utils_exec_models_new.create_models_BalancedBagging_grid(
-            estimator=models_to_use_as_estimator,
-            testing=testing,
-        )
+            # use the best 10 performances as estimator to Balanced-Bagging    
+            models_to_use_as_estimator = utils_exec_models_new.create_model_instances_from_performances(
+                df=df_validation_performances.head(10)
+            )
 
+            es_classifier, es_estimator, es_param_grid = utils_exec_models_new.create_models_BalancedBagging_grid(
+                estimator=models_to_use_as_estimator,
+                testing=testing,
+            )
+
+        #execute gridSearch
         es_grid = sk.model_selection.GridSearchCV(
             estimator=es_classifier, 
             param_grid=es_param_grid, 

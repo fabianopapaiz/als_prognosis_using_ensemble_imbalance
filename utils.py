@@ -1413,6 +1413,11 @@ def get_model_description(model_desc):
         'Bal. Bagging'
     ]
 
+    BalancedRF_models = [
+        'BalancedRandomForestClassifier',
+        'Bal. RF'
+    ]
+
     if model_desc in NB_models:
         return 'Naïve Bayes'
     elif model_desc in KNN_models:
@@ -1431,6 +1436,8 @@ def get_model_description(model_desc):
         return 'CatBoost'
     elif model_desc in BalancedBagging_models:
         return 'Balanced Bagging'
+    elif model_desc in BalancedRF_models:
+        return 'Balanced Random Forest'
     else:
         return model_desc.replace('Classifier', '')
 
@@ -1473,6 +1480,11 @@ def get_model_short_description(model_desc):
         'BalancedBaggingClassifier',
     ]
 
+    BalancedRF_models = [
+        'BalancedRandomForestClassifier',
+        'Balanced Random Forest'
+    ]
+
     if model_desc in NB_models:
         return 'NB'
     elif model_desc in KNN_models:
@@ -1485,6 +1497,8 @@ def get_model_short_description(model_desc):
         return 'DT'
     elif model_desc in BalancedBagging_models:
         return 'Bal. Bagging'
+    elif model_desc in BalancedRF_models:
+        return 'Bal. RF'
     else:
         return model_desc.replace('Classifier', '')
 
