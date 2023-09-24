@@ -196,10 +196,10 @@ def create_models_RF_grid(param_grid=None, testing=False):
 
 
     if testing:
-        max_depths = [5, 7]
-        num_estimators = [5, 9] 
+        max_depths = [5]
+        num_estimators = [9] 
         criterions = ['gini']
-        class_weights = ['balanced']
+        class_weights = [None]
 
 
     if param_grid is None:
@@ -228,9 +228,9 @@ def create_models_DT_grid(param_grid=None, testing=False):
 
 
     if testing:
-        max_depths = [5, 7]
-        criterions = ['gini', 'entropy']
-        class_weights = ['balanced']
+        max_depths = [5]
+        criterions = ['entropy']
+        class_weights = [None]
 
 
     if param_grid is None:
@@ -257,7 +257,7 @@ def create_models_NB_Complement_grid(param_grid=None, testing=False):
     force_alphas = [False, True]
 
     if testing:
-        alphas = [0.1, 0.5]
+        alphas = [0.1]
         norms = [False]
         force_alphas = [False]
 
@@ -330,8 +330,6 @@ def create_models_RadiusNN_grid(param_grid=None, testing=False):
     if testing:
         weights = ['distance']
         distance_metrics = ['manhattan']
-        #kNN
-        ks = [5] 
         #radius
         radius_set = [0.3] 
         leaf_sizes = [50] 
@@ -389,13 +387,13 @@ def create_models_NN_grid(qty_features, param_grid=None, testing=False):
 
 
     if testing:
-        max_iter = [2000]
-        layers = [(qty_features), (30, 30)]
-        alphas = [0.1, 0.3]
-        activations = ['relu']
-        solvers = ['sgd']
+        max_iter = [500]
+        layers = [(qty_features)]
+        alphas = [0.1]
+        activations = ['logistic']
+        solvers = ['adam']
         learning_rates = ['constant']
-        learning_rate_init = [0.1, 0.01]
+        learning_rate_init = [0.1]
 
 
     if param_grid is None:
@@ -429,7 +427,7 @@ def create_models_BalancedBagging_grid(estimator, param_grid=None, testing=False
 
 
     if testing:
-        num_estimators = [7, 11] 
+        num_estimators = [7] 
         warm_starts = [False]
         replacements = [False] 
 
@@ -473,13 +471,11 @@ def create_models_BalancedRandomForest_grid(param_grid=None, testing=False):
 
 
     if testing:
-        num_estimators = [7, 11] 
+        num_estimators = [7] 
+        max_depths = [7]
+        criterions = ['gini']
         warm_starts = [False]
         replacements = [False] 
-        max_depths = [5, 7]
-        num_estimators = [5, 9] 
-        criterions = ['gini']
-        class_weights = ['balanced']
 
     if param_grid is None:
         param_grid = []
@@ -508,17 +504,14 @@ def create_models_SVM_grid(param_grid=None, testing=False):
     # hyperparams
     kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
     gammas = ['scale', 'auto',]
-    
     class_weights = [None, 'balanced',]
-    # class_weights = ['balanced',]
-
     Cs = [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10] #, 100, 200, 1000, 1500, 1700, 2000]
 
     if testing:
-        kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
-        # gammas = ['auto',]
-        class_weights = ['balanced']
-        Cs = [0.1, 0.3, ]
+        kernels = ['linear']
+        gammas = ['auto']
+        class_weights = [None]
+        Cs = [0.1]
 
 
     if param_grid is None:
@@ -1017,13 +1010,16 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         estimator = '' # used only with BalancedBagging
         estimator_params = ''
         
-
         # remove the estimator param info for the Balanced-Bagging classifier
-        if str(row.classifier) == 'BalancedBaggingClassifier()':
+        if str(row.classifier) == 'BalancedBaggingClassifier':
             estimator = row.params.pop('estimator')
             estimator_params = str(estimator.get_params()).replace('\n', '').replace(' ', '')
             # extract name of estimator classifier
             estimator = str(estimator).replace('\n', '').replace(' ', '').split('(')[0]
+        #
+        elif str(row.classifier) == 'BalancedRandomForestClassifier':
+            estimator = 'RandomForest'
+
 
         validation_performances.append({
             'Scenario': scenario,
@@ -1087,7 +1083,7 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # define the name used to save CSV and Pickle files
     # ==================================================
     file_prefix = 'TESTING__' if testing else ''
-    if str(classifier) == 'BalancedBaggingClassifier()':
+    if str(classifier) in ['BalancedBaggingClassifier()', 'BalancedRandomForestClassifier()']:
         model_abrev_desc = str(estimator).replace('Classifier', '').replace('()', '').replace('-', '').replace('.', '').replace(' ', '')
         suffix = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
         name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}__{suffix}'
@@ -1104,22 +1100,24 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     utils.save_to_csv(df=df_validation_performances, csv_file=csv_to_save)
 
 
-    # =========================================
-    # save (serialize) the gridSearch instance
-    # ==========================================
-    grid_object_to_save = f'{dir_serialized_data}/grid_search__{name_to_save}.pickle'
 
-    print('SAVING GRID-SEARCH OBJECT...')
-    with open(grid_object_to_save, 'wb') as handle:
-        pickle.dump(grid, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
+    if not testing:
+        # =========================================
+        # save (serialize) the gridSearch instance
+        # ==========================================
+        grid_object_to_save = f'{dir_serialized_data}/grid_search__{name_to_save}.pickle'
+
+        print('SAVING GRID-SEARCH OBJECT...')
+        with open(grid_object_to_save, 'wb') as handle:
+            pickle.dump(grid, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-    # =========================================
-    # save (serialize) the additional_info data (DET, ROC, and Prec-Recal curves)
-    # ==========================================
-    add_info_to_save = f'{dir_serialized_data}/additional_info__{name_to_save}.pickle'
-    with open(add_info_to_save, 'wb') as handle:
-        pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
+        # =========================================
+        # save (serialize) the additional_info data (DET, ROC, and Prec-Recal curves)
+        # ==========================================
+        add_info_to_save = f'{dir_serialized_data}/additional_info__{name_to_save}.pickle'
+        with open(add_info_to_save, 'wb') as handle:
+            pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
 
     # sort the validation performances
