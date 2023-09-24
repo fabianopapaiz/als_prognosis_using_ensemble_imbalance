@@ -81,7 +81,7 @@ grids_executed = []
 
 # get all param_grid combinations for each classifier
 testing = True
-# testing = False
+testing = False
 
 
 grid_configs = [
@@ -165,6 +165,8 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
         print()
 
         
+
+
         # =======================================================
         # execute gridSearch in the Ensemble_Imbalance scenario
         # =======================================================
@@ -174,7 +176,7 @@ for features_config, X_train, y_train, X_valid, y_valid in datasets:
 
         # verify if is executing a Random Forest classifier
         if str(classifier) == 'RandomForestClassifier()':
-            es_classifier, es_estimator, es_param_grid = utils_exec_models_new.create_models_BalancedRandomForest_grid(
+            es_classifier, es_param_grid = utils_exec_models_new.create_models_BalancedRandomForest_grid(
                 testing=testing,
             )
         #

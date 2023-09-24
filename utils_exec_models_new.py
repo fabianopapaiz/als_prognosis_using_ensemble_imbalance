@@ -484,10 +484,6 @@ def create_models_BalancedRandomForest_grid(param_grid=None, testing=False):
     if param_grid is None:
         param_grid = []
 
-    if type(estimator) is not list:
-        estimator = [estimator]
-
-
     param_grid.append(
         {
             # RF
@@ -504,7 +500,7 @@ def create_models_BalancedRandomForest_grid(param_grid=None, testing=False):
 
     classifier = BalancedRandomForestClassifier()
 
-    return classifier, estimator, param_grid
+    return classifier, param_grid
 
 
 
@@ -1091,7 +1087,7 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
     # define the name used to save CSV and Pickle files
     # ==================================================
     file_prefix = 'TESTING__' if testing else ''
-    if scenario == 'Ensemble_Imbalance':
+    if str(classifier) == 'BalancedBaggingClassifier()':
         model_abrev_desc = str(estimator).replace('Classifier', '').replace('()', '').replace('-', '').replace('.', '').replace(' ', '')
         suffix = utils.get_model_short_description(classifier).replace('-', '').replace('.', '').replace(' ', '')
         name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}__{suffix}'
