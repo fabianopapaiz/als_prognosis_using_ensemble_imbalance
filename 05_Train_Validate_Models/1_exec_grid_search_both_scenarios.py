@@ -60,11 +60,12 @@ datasets = [
 
 
 # where to save results files
-dir_dest = os.path.abspath('0_exec_results_py')
+# dir_dest = os.path.abspath('0_exec_results_py')
+dir_dest = os.path.abspath('1_exec_results_py_5_fold_3_repeat')
 
 
 # define the Cross-Validation strategy
-CV_N_SPLITS = 4
+CV_N_SPLITS = 5
 CV_N_REPEATS = 3
 RANDOM_STATE = 42
 
@@ -85,22 +86,16 @@ testing = False
 
 
 grid_configs = [
-    # OK 0 utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
-    # OK 0 utils_exec_models_new.create_models_kNN_grid(testing=testing),
-
-    # OK 0 utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
-    
-    # OK 0 utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
-
-    # OK 0 utils_exec_models_new.create_models_DT_grid(testing=testing),
-    # OK 0 utils_exec_models_new.create_models_SVM_grid(testing=testing),    
-
-    # OK 0 ['NeuralNetworks', None],
-
+    utils_exec_models_new.create_models_NB_Gaussian_grid(testing=testing),
+    utils_exec_models_new.create_models_kNN_grid(testing=testing),
+    utils_exec_models_new.create_models_NB_Complement_grid(testing=testing),
+    utils_exec_models_new.create_models_RadiusNN_grid(testing=testing),
+    utils_exec_models_new.create_models_DT_grid(testing=testing),
+    utils_exec_models_new.create_models_SVM_grid(testing=testing),    
+    #
+    ['NeuralNetworks', None],
+    #
     utils_exec_models_new.create_models_RF_grid(testing=testing),
-    
-
-
 ]
 
 
