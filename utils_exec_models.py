@@ -32,7 +32,11 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm, ListedColormap
 
 import seaborn as sns
-plt.style.use('seaborn-whitegrid')
+try:
+    plt.style.use('seaborn-whitegrid')
+except:
+    plt.style.use('seaborn-v0_8-whitegrid')
+        
 
 # import plotly as ply
 # import plotly.express as px
