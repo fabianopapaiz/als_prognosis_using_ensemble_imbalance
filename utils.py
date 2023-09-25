@@ -1374,22 +1374,27 @@ def get_model_description(model_desc):
     ]
 
     KNN_models = [
+        'RadiusNeighbors', 
         'RadiusNeighborsClassifier', 
+        'KNeighbors',
         'KNeighborsClassifier',
         'k-NN', 
     ]
 
     NN_models = [
+        'MLP',
         'MLPClassifier',
         'NN',
     ]
 
     RF_models = [
+        'RandomForest',
         'RandomForestClassifier',
         'RF', 
     ]
 
     DT_models = [
+        'DecisionTree',
         'DecisionTreeClassifier',
         'DT', 
     ]
