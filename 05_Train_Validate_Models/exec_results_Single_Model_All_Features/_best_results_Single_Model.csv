@@ -1,9 +1,0 @@
-Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
-Random Forest,0.86,0.87,0.86,0.59,0.92,0.86,0.45,RandomForestClassifier,"{'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 5, 'n_estimators': 51, 'random_state': 42}",0.01
-SVM,0.85,0.89,0.81,0.54,0.93,0.82,0.39,SVC,"{'C': 0.7, 'class_weight': 'balanced', 'gamma': 'scale', 'kernel': 'linear', 'probability': True, 'random_state': 42}",0.01
-Neural Networks,0.84,0.72,0.95,0.69,0.93,0.92,0.65,MLPClassifier,"{'activation': 'tanh', 'alpha': 0.5, 'hidden_layer_sizes': (23,), 'learning_rate': 'constant', 'learning_rate_init': 0.7, 'max_iter': 2000, 'random_state': 42, 'solver': 'sgd'}",0.01
-Decision Tree,0.83,0.85,0.81,0.53,0.88,0.82,0.38,DecisionTreeClassifier,"{'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 4, 'random_state': 42}",0.01
-Naïve Bayes,0.82,0.85,0.79,0.5,0.9,0.79,0.35,ComplementNB,"{'alpha': 3.0, 'force_alpha': True, 'norm': False}",0.01
-Naïve Bayes,0.8,0.74,0.86,0.53,0.9,0.84,0.41,GaussianNB,{},0.01
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 300, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.02
-k-NN,0.68,0.4,0.96,0.48,0.81,0.9,0.59,KNeighborsClassifier,"{'metric': 'manhattan', 'n_neighbors': 3, 'weights': 'uniform'}",0.03

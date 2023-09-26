@@ -1,6 +1,0 @@
-Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,Estimator,fit_time
-Balanced Bagging,0.79,0.79,0.79,0.47,0.87,0.79,0.34,BalancedBaggingClassifier,"{'bootstrap': True, 'n_estimators': 15, 'oob_score': False, 'random_state': 42, 'replacement': False, 'sampling_strategy': 'auto', 'warm_start': False}",GaussianNB(),0.02
-Balanced Bagging,0.79,0.79,0.79,0.47,0.87,0.79,0.34,BalancedBaggingClassifier,"{'bootstrap': True, 'n_estimators': 15, 'oob_score': False, 'random_state': 42, 'replacement': False, 'sampling_strategy': 'majority', 'warm_start': False}",GaussianNB(),0.02
-Balanced Bagging,0.79,0.79,0.79,0.47,0.87,0.79,0.34,BalancedBaggingClassifier,"{'bootstrap': True, 'n_estimators': 15, 'oob_score': False, 'random_state': 42, 'replacement': False, 'sampling_strategy': 'auto', 'warm_start': True}",GaussianNB(),0.02
-Balanced Bagging,0.79,0.79,0.79,0.47,0.87,0.79,0.34,BalancedBaggingClassifier,"{'bootstrap': True, 'n_estimators': 15, 'oob_score': False, 'random_state': 42, 'replacement': False, 'sampling_strategy': 'majority', 'warm_start': True}",GaussianNB(),0.03
-Balanced Bagging,0.79,0.79,0.79,0.47,0.87,0.79,0.34,BalancedBaggingClassifier,"{'bootstrap': True, 'n_estimators': 15, 'oob_score': True, 'random_state': 42, 'replacement': False, 'sampling_strategy': 'auto', 'warm_start': False}",GaussianNB(),0.03

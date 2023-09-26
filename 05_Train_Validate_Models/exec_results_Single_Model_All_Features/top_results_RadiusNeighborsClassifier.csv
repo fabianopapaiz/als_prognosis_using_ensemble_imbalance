@@ -1,6 +1,0 @@
-Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 300, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.02
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 50, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.02
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 500, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.02
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 100, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.03
-k-NN,0.72,0.81,0.63,0.36,0.73,0.65,0.23,RadiusNeighborsClassifier,"{'leaf_size': 200, 'metric': 'manhattan', 'outlier_label': 1, 'radius': 1.0, 'weights': 'uniform'}",0.03

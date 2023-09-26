@@ -1,2 +1,0 @@
-Scenario,Features,Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,Estimator,Estimator_Class,Estimator_Hyperparams,fit_time,train_balanced_accuracy,train_sensitivity,train_specificity,train_f1_score,train_AUC,train_accuracy,train_precision
-Single_Model,without_Diagnosis_Delay,k-NN,0.64,0.94,0.35,0.28,0.65,0.42,0.16,RadiusNeighborsClassifier,"{'leaf_size':50,'metric':'manhattan','outlier_label':1,'radius':0.3,'weights':'distance'}",,,,0.03,0.62,0.91,0.33,0.28,0.62,0.41,0.17

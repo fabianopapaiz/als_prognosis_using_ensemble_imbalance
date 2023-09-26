@@ -1,0 +1,6 @@
+Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,Estimator,fit_time
+Balanced Bagging,0.81,0.81,0.82,0.51,0.89,0.82,0.38,BalancedBaggingClassifier,"{'n_estimators': 25, 'random_state': 42, 'sampling_strategy': 'auto', 'warm_start': True}",GaussianNB(),0.01
+Balanced Bagging,0.81,0.81,0.82,0.51,0.89,0.82,0.38,BalancedBaggingClassifier,"{'n_estimators': 25, 'random_state': 42, 'sampling_strategy': 'all', 'warm_start': True}",GaussianNB(),0.01
+Balanced Bagging,0.81,0.81,0.82,0.51,0.89,0.82,0.38,BalancedBaggingClassifier,"{'n_estimators': 25, 'random_state': 42, 'sampling_strategy': 'majority', 'warm_start': True}",GaussianNB(),0.01
+Balanced Bagging,0.81,0.81,0.82,0.51,0.89,0.82,0.38,BalancedBaggingClassifier,"{'n_estimators': 25, 'random_state': 42, 'sampling_strategy': 'auto', 'warm_start': False}",GaussianNB(),0.01
+Balanced Bagging,0.81,0.81,0.82,0.51,0.89,0.82,0.38,BalancedBaggingClassifier,"{'n_estimators': 25, 'random_state': 42, 'sampling_strategy': 'all', 'warm_start': False}",GaussianNB(),0.01

@@ -1,2 +1,0 @@
-Model,balanced_accuracy,sensitivity,specificity,f1_score,AUC,accuracy,precision,Model_Class,Hyperparams,fit_time
-Naïve Bayes,0.77,0.7,0.84,0.49,0.88,0.82,0.37,GaussianNB,{},0.01
