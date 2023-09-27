@@ -31,7 +31,6 @@ import pickle
 from timeit import default_timer as timer
 
 
-
 # ======================================================================
 # get train/test data and separate by features_config
 # ======================================================================
