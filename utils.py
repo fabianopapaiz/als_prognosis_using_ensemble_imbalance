@@ -1415,12 +1415,14 @@ def get_model_description(model_desc):
 
     BalancedBagging_models = [
         'BalancedBaggingClassifier',
-        'Bal. Bagging'
+        'Bal. Bagging',
+        'BalBagging',
     ]
 
     BalancedRF_models = [
         'BalancedRandomForestClassifier',
-        'Bal. RF'
+        'Bal. RF',
+        'BalRF',
     ]
 
     if model_desc in NB_models:
