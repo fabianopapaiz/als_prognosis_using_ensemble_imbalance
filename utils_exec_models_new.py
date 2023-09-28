@@ -1235,6 +1235,11 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     """
     mean = np.mean(differences)
     std = corrected_std(differences, n_train, n_test)
+
+    if std ==0:
+        std = 0.001
+    # print(mean, std)
+
     t_stat = mean / std
     p_val = t.sf(np.abs(t_stat), df)  # right-tailed t-test
     return t_stat, p_val
