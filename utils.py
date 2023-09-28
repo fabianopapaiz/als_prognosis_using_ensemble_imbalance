@@ -1,5 +1,6 @@
 import math
 import os
+import string
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from matplotlib.ticker import PercentFormatter
 from datetime import datetime
 from datetime import timedelta
 from dateutil import relativedelta
+
 
 
 
@@ -273,6 +275,23 @@ def get_coded_fvc_to_string(code, add_coded_value=False):
 
     return text
 
+
+
+def set_feature_values_order(x):
+
+    x = x.replace('Short', '(0) Short')
+    x = x.replace('Average', '(1) Average')
+    x = x.replace('Long', '(2) Long')
+
+    x = x.replace('Slow', '(0) Slow')
+    x = x.replace('Rapid', '(2) Rapid')
+
+    x = x.replace('Underweight', '(0) Underweight')
+    x = x.replace('Normal', '(1) Normal')
+    x = x.replace('Overweight', '(2) Overweight')
+    x = x.replace('Obesity', '(3) Obesity')
+
+    return x
 
 
 def get_coded_diagnosis_delay_to_string(code, scaled=False, add_coded_value=False):
@@ -1625,7 +1644,7 @@ def save_plot(plt, folder, file_name, dpi=300, bbox_inches='tight', save_in_pdf_
 def customize_xticks(ax, fontweight='bold', fontsize=10):
     xticks_modified = []
     
-    print('xticks values:', ax.get_xticks())
+    # print('xticks values:', ax.get_xticks())
 
     for val in ax.get_xticks():
         xticks_modified.append('')
@@ -1640,7 +1659,7 @@ def customize_xticks(ax, fontweight='bold', fontsize=10):
     xticks_modified[1] = 'Non-Short'        
     xticks_modified[-1] = 'Short'        
 
-    print('xticks modif.:', xticks_modified)
+    # print('xticks modif.:', xticks_modified)
 
     ax.set_xticks(ax.get_xticks(), xticks_modified, fontweight=fontweight, fontsize=fontsize)
 
