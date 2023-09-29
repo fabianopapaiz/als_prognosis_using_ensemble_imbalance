@@ -1243,3 +1243,108 @@ def compute_corrected_ttest(differences, df, n_train, n_test):
     t_stat = mean / std
     p_val = t.sf(np.abs(t_stat), df)  # right-tailed t-test
     return t_stat, p_val
+
+
+
+def get_best_model_instances():
+    best_classifiers = list()
+
+    # Decision Tree,Ensemble-Imbalance,All Features,Balanced Bagging,0.88,0.96,0.81,0.57,0.94,0.82,0.4,
+    estimator = DecisionTreeClassifier(class_weight='balanced',max_depth=4,random_state=42)
+    dt_ei = BalancedBaggingClassifier(
+        estimator=estimator,
+    #     ':DecisionTreeClassifier(class_weight='balanced',max_depth=4,random_state=42),
+        **{'n_estimators':7,'random_state':42,'replacement':True,'sampling_strategy':'all','warm_start':True}
+    )
+    best_classifiers.append(['Decision Tree (EI)', 'Ensemble-Imbalance', dt_ei])
+
+    # Decision Tree,Single-Model,All Features,Decision Tree,0.83,0.85,0.81,0.53,0.88,0.82,0.38,
+    dt_sm = DecisionTreeClassifier(
+        **{'class_weight':'balanced','criterion':'gini','max_depth':4,'random_state':42}
+    )
+    best_classifiers.append(['Decision Tree (SM)', 'Single-Model', dt_sm])
+
+
+
+    # Neural Networks,Ensemble-Imbalance,All Features,Balanced Bagging,0.88,0.96,0.8,0.56,0.93,0.82,0.39,
+    estimator = MLPClassifier(activation='tanh',alpha=0.1,hidden_layer_sizes=30,learning_rate='adaptive',learning_rate_init=0.7,max_iter=2000,random_state=42)
+    nn_ei = BalancedBaggingClassifier(
+        estimator=estimator,
+        **{'n_estimators':101,'random_state':42,'replacement':True,'sampling_strategy':'auto','warm_start':False}
+    )
+    best_classifiers.append(['Neural Networks (EI)', 'Ensemble-Imbalance', nn_ei])
+
+    # Neural Networks,Single-Model,All Features,Neural Networks,0.87,0.87,0.87,0.61,0.94,0.87,0.47,
+    nn_sm = MLPClassifier(
+        **{'activation':'tanh','alpha':0.3,'hidden_layer_sizes':(23,23,23),'learning_rate':'constant',
+        'learning_rate_init':0.7,'max_iter':2000,'random_state':42,'solver':'sgd'}
+    )
+    best_classifiers.append(['Neural Networks (SM)', 'Single-Model', nn_sm])
+
+
+
+    # Random Forest,Ensemble-Imbalance,All Features,Balanced Random Forest,0.87,0.96,0.79,0.55,0.93,0.81,0.38,
+    rf_ei = BalancedRandomForestClassifier(
+        **{'criterion':'entropy','max_depth':7,'n_estimators':19,'random_state':42,'replacement':True,
+        'sampling_strategy':'auto','warm_start':False}
+    )
+    best_classifiers.append(['Random Forest (EI)', 'Ensemble-Imbalance', rf_ei])
+
+    # Random Forest,Single-Model,All Features,Random Forest,0.87,0.89,0.86,0.6,0.92,0.86,0.46,
+    rf_sm = RandomForestClassifier(
+        **{'class_weight':'balanced','criterion':'gini','max_depth':5,'n_estimators':51,'random_state':42}
+    )
+    best_classifiers.append(['Random Forest (SM)', 'Single-Model', rf_sm])
+
+
+
+    # SVM,Ensemble-Imbalance,All Features,Balanced Bagging,0.87,0.94,0.81,0.56,0.93,0.82,0.4,
+    estimator = SVC(C=3,class_weight='balanced',gamma='auto',probability=True,random_state=42)
+    svm_ei = BalancedBaggingClassifier(
+        estimator=estimator,
+        **{'n_estimators':51,'random_state':42,'replacement':False,'sampling_strategy':'auto','warm_start':True}
+    )
+    best_classifiers.append(['SVM (EI)', 'Ensemble-Imbalance', svm_ei])
+
+    # SVM,Single-Model,All Features,SVM,0.87,0.94,0.8,0.54,0.93,0.81,0.38,
+    svm_sm = SVC(
+        **{'C':0.3,'class_weight':'balanced','gamma':'auto','kernel':'rbf','probability':True,'random_state':42}
+    )
+    best_classifiers.append(['SVM (SM)', 'Single-Model', svm_sm])
+
+
+
+
+    # Naïve Bayes,Ensemble-Imbalance,All Features,Balanced Bagging,0.84,0.85,0.83,0.54,0.9,0.83,0.4
+    estimator = GaussianNB()
+    nb_ei = BalancedBaggingClassifier(
+        estimator = estimator,
+        **{'n_estimators':31,'random_state':42,'replacement':True,'sampling_strategy':'all','warm_start':False}
+    )
+    best_classifiers.append(['Naïve Bayes (EI)', 'Ensemble-Imbalance', nb_ei])
+
+    # Naïve Bayes,Single-Model,All Features,Naïve Bayes,0.8,0.74,0.86,0.53,0.9,0.84,0.41,
+    nb_sm = GaussianNB()
+    best_classifiers.append(['Naïve Bayes (SM)', 'Single-Model', nb_sm])
+
+
+    # k-NN,Ensemble-Imbalance,All Features,Balanced Bagging,0.85,0.85,0.85,0.57,0.9,0.85,0.43,
+    estimator = KNeighborsClassifier(metric='euclidean',weights='distance')
+    knn_ei = BalancedBaggingClassifier(
+        estimator=estimator,
+        **{'n_estimators':101,'random_state':42,'replacement':True,'sampling_strategy':'all',
+        'warm_start':True}
+    )
+    best_classifiers.append(['k-NN (EI)', 'Ensemble-Imbalance', knn_ei])
+
+    # k-NN,Single-Model,All Features,k-NN,0.68,0.4,0.96,0.48,0.81,0.9,0.59,
+    knn_sm = KNeighborsClassifier(
+        **{'metric':'manhattan','n_neighbors':3,'weights':'uniform'}
+    )
+    best_classifiers.append(['k-NN (SM)', 'Single-Model', knn_sm])
+
+
+    return best_classifiers
+
+
+
