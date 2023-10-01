@@ -507,10 +507,10 @@ def create_models_BalancedRandomForest_grid(param_grid=None, testing=False):
 
 def create_models_SVM_grid(param_grid=None, testing=False):
     # hyperparams
-    kernels = ['rbf', 'linear'] #, 'poly', 'sigmoid',]
+    kernels = ['rbf', 'linear'] 
     gammas = ['scale', 'auto',]
     class_weights = [None, 'balanced',]
-    Cs = [0.1, 0.3, 0.5, 0.7, 1, 3, 5, 10] #, 100, 200, 1000, 1500, 1700, 2000]
+    Cs = [0.1, 0.5, 0.7, 1, 5, 7]
 
     if testing:
         kernels = ['linear']
@@ -1097,6 +1097,13 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         name_to_save = f'{file_prefix}{model_abrev_desc}__{features_config}__{scenario}'
 
 
+
+    # sort the validation performances
+    df_validation_performances = sort_performances_results(
+        df=df_validation_performances,
+    )
+
+
     # =========================================
     # save CV validation + trainning results
     # ==========================================
@@ -1124,11 +1131,6 @@ def exec_grid_search_and_save_performances(dir_dest, testing, grid, classifier, 
         with open(add_info_to_save, 'wb') as handle:
             pickle.dump(additional_info, handle) #, protocol=pickle.HIGHEST_PROTOCOL)
 
-
-    # sort the validation performances
-    df_validation_performances = sort_performances_results(
-        df=df_validation_performances,
-    )
 
     #
     return grid, df_validation_performances
@@ -1297,18 +1299,18 @@ def get_best_model_instances():
     best_classifiers.append(['Random Forest (SM)', 'Single-Model', rf_sm])
 
 
-
-    # SVM,Ensemble-Imbalance,All Features,Balanced Bagging,0.87,0.94,0.81,0.56,0.93,0.82,0.4,
-    estimator = SVC(C=3,class_weight='balanced',gamma='auto',probability=True,random_state=42)
+    # SVM,Ensemble-Imbalance,All Features,Balanced Bagging,0.87,0.94,0.8,0.54,0.92,0.81,0.38,
+    estimator = SVC(C=0.7,class_weight='balanced',gamma='auto',probability=True,random_state=42)
     svm_ei = BalancedBaggingClassifier(
         estimator=estimator,
         **{'n_estimators':51,'random_state':42,'replacement':False,'sampling_strategy':'auto','warm_start':True}
     )
     best_classifiers.append(['SVM (EI)', 'Ensemble-Imbalance', svm_ei])
 
-    # SVM,Single-Model,All Features,SVM,0.87,0.94,0.8,0.54,0.93,0.81,0.38,
+    # SVM,Single-Model,All Features,SVM,0.86,0.91,0.81,0.55,0.93,0.82,0.39,
+    {'C':0.7,'class_weight':'balanced','gamma':'auto','kernel':'rbf','probability':True,'random_state':42}
     svm_sm = SVC(
-        **{'C':0.3,'class_weight':'balanced','gamma':'auto','kernel':'rbf','probability':True,'random_state':42}
+        **{'C':0.7,'class_weight':'balanced','gamma':'auto','kernel':'rbf','probability':True,'random_state':42}
     )
     best_classifiers.append(['SVM (SM)', 'Single-Model', svm_sm])
 
