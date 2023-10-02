@@ -1664,8 +1664,12 @@ def customize_xticks(ax, fontweight='bold', fontsize=10):
     ax.set_xticks(ax.get_xticks(), xticks_modified, fontweight=fontweight, fontsize=fontsize)
 
 
-def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names, x_min, x_max, folder_to_save,
-                                figsize=[5,2], bar_height = 0.1, midline_decimal_point=False, qty_features=14):
+def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names, 
+                                            x_min, x_max, folder_to_save,
+                                            file_name='SHAP_by_feature_values', 
+                                            figsize=[5,2], bar_height = 0.1, 
+                                            midline_decimal_point=False, 
+                                            qty_features=14):
 
     dfs = data_frames.copy()
 
@@ -1760,7 +1764,6 @@ def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names
 
 
     if folder_to_save is not None:
-        file_name = f'SHAP_by_feature_values' 
         save_plot(
             plt=plt, 
             folder=folder_to_save, 
