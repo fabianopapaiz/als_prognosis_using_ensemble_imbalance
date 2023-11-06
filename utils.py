@@ -1675,18 +1675,29 @@ def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names
 
     # print(len(dfs))
 
-    rows = int(np.ceil(qty_features/2))
-    cols = 2
+    # rows = int(np.ceil(qty_features/2))
+    # cols = 2
     # print(rows, cols)
+    rows = 3
+    cols = 4
+
 
     fig, axes = plt.subplots(
         rows, 
         cols, 
         figsize=figsize, 
         layout='constrained',
+        # gridspec_kw={'height_ratios': [0.7, 0.7, 0.7, 0.7, 0.7]},
         # sharex=True, 
         # sharey=True    
     )
+
+    # fig5 = plt.figure(constrained_layout=True)
+    # widths = [2, 3, 1.5]
+    # heights = [1, 3, 2]
+    # spec5 = fig5.add_gridspec(ncols=3, nrows=3, width_ratios=widths,
+    #                         height_ratios=heights)
+
     axes = axes.flatten()
 
     # print(axes[0], axes[1])
@@ -1733,7 +1744,7 @@ def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names
                         data=df, 
                         title=f'{feat}', 
                         # figsize=[6,(qty_values / 2)],
-                        bar_height=0.3,
+                        bar_height=bar_height,
                         x_min=x_min,
                         x_max=x_max,
                         feature_name=feature_name,
@@ -1743,12 +1754,15 @@ def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names
                         idx_axis=i_axes+1,
                     )
                 
+
+
                 ax.set_title(f'\n\n{feature_name}',fontweight='bold',fontsize=10)
 
-                current_row = int((i_axes/2)+0.6)
-                # print(i_axes)
-                # print(current_row)
-                if (current_row == rows) or (i_axes == len(axes)-2):
+                # current_row = int((i_axes/2)+0.6)
+                current_row = int((i_axes/4))
+                print(i_axes, current_row, rows)
+                # if (current_row == rows) or (i_axes == len(axes)-2):
+                if (current_row == rows-1) or (i_axes >= 6):
                     ax.set_xticks([x_min, (x_min*0.7), 0, (x_max*0.7), x_max], labels=[0,1,2,3,4],
                         fontweight='bold',
                         fontsize=8
@@ -1760,6 +1774,10 @@ def plot_shap_values_by_feature_in_one_graph(data_frames, features_ordered_names
 
                 break
     
+    axes[10].set_axis_off()
+    axes[11].set_axis_off()
+
+
     plt.tight_layout()
 
 
@@ -1876,7 +1894,9 @@ def plot_shap_values_by_feature(data, title, x_min, x_max, feature_name, folder_
                 fontweight='bold',
                 fontsize=8)
         
-        if idx_axis%2 == 0:
+        # if idx_axis%2 == 0:
+        print(idx_axis)
+        if idx_axis not in [1,5,9]:
             ax.set_ylabel('', fontsize=10)
 
 
